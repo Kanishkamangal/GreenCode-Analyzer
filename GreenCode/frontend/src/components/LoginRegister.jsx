@@ -14,7 +14,7 @@ import {
   FiCheckCircle,
   FiRefreshCw,
 } from "react-icons/fi";
-import { GoogleLogin } from "@react-oauth/google";
+
 
 export default function LoginRegister({
   onClose,
