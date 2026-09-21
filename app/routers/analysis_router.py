@@ -35,7 +35,9 @@ from app.services.input_contract_analyzer import (
 from app.services.workload_resolver import (
     resolve_benchmark_workload,
 )
-
+from app.services.custom_workload_generator import (
+    get_input_generation_capability,
+)
 logger = logging.getLogger(__name__)
 CUSTOM_ANALYSIS_JOBS = {}
 CUSTOM_ANALYSIS_JOBS_LOCK = threading.Lock()
@@ -47,6 +49,96 @@ router = APIRouter(
     prefix="/analysis",
     tags=["Analysis"]
 )
+
+# -----------------------------------
+# Validate Custom Input Mode
+# -----------------------------------
+
+def validate_custom_input_mode(
+    comparison,
+    reference_language_name: str,
+):
+    input_contract = detect_input_contract(
+        reference_code=comparison.reference_code,
+        language=reference_language_name,
+    )
+
+    resolved_workload = resolve_benchmark_workload(
+        benchmark_name=comparison.custom_benchmark_name,
+        description=comparison.custom_description,
+        reference_code=comparison.reference_code,
+        workload_type=comparison.workload_type,
+        input_contract=input_contract,
+    )
+
+    generation_mode = resolved_workload.get(
+        "generation_mode",
+        "custom",
+    )
+
+    can_generate = bool(
+        resolved_workload.get(
+            "can_generate",
+            False,
+        )
+    )
+
+    has_custom_input = bool(
+        comparison.custom_input
+        and comparison.custom_input.strip()
+    )
+
+    contract_type = (
+        str(
+            input_contract.get("contract_type")
+            or ""
+        )
+        .strip()
+        .lower()
+    )
+
+    if generation_mode == "blocked":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                resolved_workload.get("reason")
+                or "Benchmark workload resolution is blocked."
+            ),
+        )
+
+    if contract_type == "no-input":
+        return input_contract, resolved_workload
+
+    if can_generate:
+        if (
+            comparison.input_size is None
+            or comparison.input_size <= 0
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Input size must be greater than zero "
+                    "for automatic workload generation."
+                ),
+            )
+
+        return input_contract, resolved_workload
+
+    if not has_custom_input:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                resolved_workload.get("reason")
+                or (
+                    "Automatic workload generation is not "
+                    "supported for this input contract. "
+                    "Please provide Custom Input."
+                )
+            ),
+        )
+
+    return input_contract, resolved_workload
+
 def update_predefined_job(
     job_id: str,
     step: str,
@@ -906,8 +998,35 @@ def run_custom_analysis_job(
         # -----------------------------------
 
         raw_results = []
+        skipped_results = []
 
         for result in results:
+
+            result_status = result.get(
+                "status",
+                "success",
+            )
+
+            if result_status != "success":
+                skipped_results.append({
+                    "language": result.get("language"),
+                    "status": result_status,
+                    "reason": result.get(
+                        "reason",
+                        "Implementation did not complete successfully.",
+                    ),
+                })
+                continue
+
+            language_name = result.get("language")
+
+            if not language_name:
+                skipped_results.append({
+                    "language": None,
+                    "status": "failed",
+                    "reason": "Benchmark result did not include a language.",
+                })
+                continue
 
             language = (
                 db.query(
@@ -915,7 +1034,7 @@ def run_custom_analysis_job(
                 )
                 .filter(
                     ProgrammingLanguage.lang_name
-                    == result["language"]
+                    == language_name
                 )
                 .first()
             )
@@ -923,39 +1042,85 @@ def run_custom_analysis_job(
             if language is None:
                 raise ValueError(
                     "Programming language "
-                    f"{result['language']} "
+                    f"{language_name} "
                     "not found."
                 )
+
+            execution_time = result.get(
+                "execution_time"
+            )
+            cpu_usage = result.get(
+                "cpu_usage"
+            )
+            memory_usage = result.get(
+                "memory_usage"
+            )
+            energy_consumption = result.get(
+                "energy_consumption"
+            )
+            output_verified = result.get(
+                "output_verified",
+                False,
+            )
+
+            missing_metrics = []
+
+            if execution_time is None:
+                missing_metrics.append(
+                    "execution_time"
+                )
+
+            if cpu_usage is None:
+                missing_metrics.append(
+                    "cpu_usage"
+                )
+
+            if memory_usage is None:
+                missing_metrics.append(
+                    "memory_usage"
+                )
+
+            if energy_consumption is None:
+                missing_metrics.append(
+                    "energy_consumption"
+                )
+
+            if missing_metrics:
+                skipped_results.append({
+                    "language": language_name,
+                    "status": "failed",
+                    "reason": (
+                        "Missing benchmark metrics: "
+                        + ", ".join(missing_metrics)
+                    ),
+                })
+                continue
 
             raw_results.append({
                 "lang_id":
                     language.lang_id,
 
                 "execution_time":
-                    result[
-                        "execution_time"
-                    ],
+                    execution_time,
 
                 "cpu_usage":
-                    result[
-                        "cpu_usage"
-                    ],
+                    cpu_usage,
 
                 "memory_usage":
-                    result[
-                        "memory_usage"
-                    ],
+                    memory_usage,
 
                 "energy_consumption":
-                    result[
-                        "energy_consumption"
-                    ],
+                    energy_consumption,
 
                 "output_verified":
-                    result[
-                        "output_verified"
-                    ],
+                    output_verified,
             })
+
+        if not raw_results:
+            raise ValueError(
+                "No implementation completed successfully, "
+                "so no benchmark measurements are available."
+            )
 
         # -----------------------------------
         # Green Score
@@ -984,7 +1149,10 @@ def run_custom_analysis_job(
             bench_size=None,
             custom_category=resolved_benchmark_category,
             custom_benchmark_name=resolved_benchmark_name,
-            workload_type=comparison_data.get("workload_type"),
+            workload_type=(
+                comparison_data.get("workload_type")
+                or benchmark_result.get("workload_type")
+            ),
             input_size=comparison_data.get("input_size"),
         )
 
@@ -1045,6 +1213,9 @@ def run_custom_analysis_job(
                 benchmark_metadata=benchmark_metadata,
                 workload_type=(
                     comparison_data.get(
+                        "workload_type"
+                    )
+                    or benchmark_result.get(
                         "workload_type"
                     )
                 ),
@@ -1806,6 +1977,10 @@ def resolve_custom_workload(
             "can_generate",
             False,
         ),
+        "generation_mode": result.get(
+            "generation_mode",
+            "custom",
+        ),
         "reason": (
             result.get("reason")
             or result.get(
@@ -1832,6 +2007,7 @@ def resolve_custom_workload(
 )
 def start_custom_comparison(
     comparison: CustomAnalysisComparisonCreate,
+    db: Session = Depends(get_db),
 ):
 
     if not comparison.target_lang_ids:
@@ -1843,6 +2019,24 @@ def start_custom_comparison(
             )
         )
 
+    reference_language = (
+        db.query(ProgrammingLanguage)
+        .filter(
+            ProgrammingLanguage.lang_id
+            == comparison.reference_lang_id
+        )
+        .first()
+    )
+
+    if reference_language is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                "Reference programming language "
+                "not found."
+            ),
+        )
+
     if not comparison.reference_code.strip():
         raise HTTPException(
             status_code=400,
@@ -1851,23 +2045,14 @@ def start_custom_comparison(
             )
         )
 
-    has_custom_input = bool(
-        comparison.custom_input
-        and comparison.custom_input.strip()
+    input_contract, resolved_workload = (
+        validate_custom_input_mode(
+            comparison=comparison,
+            reference_language_name=(
+                reference_language.lang_name
+            ),
+        )
     )
-
-    if not has_custom_input:
-        if (
-            comparison.input_size is None
-            or comparison.input_size <= 0
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Input size must be greater than zero "
-                    "when automatic workload generation is used."
-                )
-            )
 
     job_id = str(
         uuid.uuid4()
@@ -1886,12 +2071,73 @@ def start_custom_comparison(
             "steps": {},
             "results": None,
             "error": None,
+            "benchmark_metadata": (
+                resolved_workload.get(
+                    "benchmark_metadata"
+                )
+            ),
+            "generation_mode": (
+                resolved_workload.get(
+                    "generation_mode",
+                    "custom",
+                )
+            ),
+            "can_generate": bool(
+                resolved_workload.get(
+                    "can_generate",
+                    False,
+                )
+            ),
+            "input_contract": input_contract,
+            "workload_resolution": resolved_workload,
+            "comparison_id": None,
             "created_at": now,
             "updated_at": now,
         }
 
     comparison_data = (
         comparison.model_dump()
+    )
+
+    # Propagate the resolver-selected workload type
+    # into the worker so the benchmark engine uses
+    # the resolved workload rather than only the raw
+    # request value.
+    resolved_workload_type = resolved_workload.get(
+        "workload_type"
+    )
+
+    if resolved_workload_type:
+        comparison_data["workload_type"] = (
+            resolved_workload_type
+        )
+
+    comparison_data["input_contract"] = (
+        input_contract
+    )
+
+    comparison_data["workload_resolution"] = (
+        resolved_workload
+    )
+
+    comparison_data["benchmark_metadata"] = (
+        resolved_workload.get(
+            "benchmark_metadata"
+        )
+    )
+
+    comparison_data["generation_mode"] = (
+        resolved_workload.get(
+            "generation_mode",
+            "custom",
+        )
+    )
+
+    comparison_data["can_generate"] = bool(
+        resolved_workload.get(
+            "can_generate",
+            False,
+        )
     )
 
     worker = threading.Thread(
@@ -1908,6 +2154,21 @@ def start_custom_comparison(
     return {
         "job_id": job_id,
         "status": "queued",
+        "workload_type": comparison_data.get(
+            "workload_type"
+        ),
+        "generation_mode": comparison_data.get(
+            "generation_mode",
+            "custom",
+        ),
+        "can_generate": comparison_data.get(
+            "can_generate",
+            False,
+        ),
+        "benchmark_metadata": comparison_data.get(
+            "benchmark_metadata"
+        ),
+        "input_contract": input_contract,
     }
 
 
@@ -1958,6 +2219,20 @@ def get_custom_comparison_status(
             
             "benchmark_metadata": job.get(
                 "benchmark_metadata"
+            ),
+
+            "generation_mode": job.get(
+                "generation_mode",
+                "custom",
+            ),
+
+            "can_generate": job.get(
+                "can_generate",
+                False,
+            ),
+
+            "input_contract": job.get(
+                "input_contract"
             ),
 
             "error":
@@ -2017,9 +2292,13 @@ def create_custom_comparison(
     # Exact input contract
     # -----------------------------------
 
-    input_contract = detect_input_contract(
-        reference_code=comparison.reference_code,
-        language=reference_language.lang_name,
+    input_contract, resolved_workload = (
+        validate_custom_input_mode(
+            comparison=comparison,
+            reference_language_name=(
+                reference_language.lang_name
+            ),
+        )
     )
     # -----------------------------------
     # Find target languages
@@ -2101,7 +2380,10 @@ def create_custom_comparison(
                 comparison.custom_description
             ),
             workload_type=(
-                comparison.workload_type
+                resolved_workload.get(
+                    "workload_type"
+                )
+                or comparison.workload_type
             ),
             input_size=(
                 comparison.input_size
@@ -2158,14 +2440,41 @@ def create_custom_comparison(
     # -----------------------------------
 
     raw_results = []
+    skipped_results = []
 
     for result in results:
+
+        result_status = result.get(
+            "status",
+            "success",
+        )
+
+        if result_status != "success":
+            skipped_results.append({
+                "language": result.get("language"),
+                "status": result_status,
+                "reason": result.get(
+                    "reason",
+                    "Implementation did not complete successfully.",
+                ),
+            })
+            continue
+
+        language_name = result.get("language")
+
+        if not language_name:
+            skipped_results.append({
+                "language": None,
+                "status": "failed",
+                "reason": "Benchmark result did not include a language.",
+            })
+            continue
 
         language = (
             db.query(ProgrammingLanguage)
             .filter(
                 ProgrammingLanguage.lang_name
-                == result["language"]
+                == language_name
             )
             .first()
         )
@@ -2175,30 +2484,88 @@ def create_custom_comparison(
                 status_code=404,
                 detail=(
                     f"Programming language "
-                    f"{result['language']} not found."
+                    f"{language_name} not found."
                 )
             )
+
+        execution_time = result.get(
+            "execution_time"
+        )
+        cpu_usage = result.get(
+            "cpu_usage"
+        )
+        memory_usage = result.get(
+            "memory_usage"
+        )
+        energy_consumption = result.get(
+            "energy_consumption"
+        )
+        output_verified = result.get(
+            "output_verified",
+            False,
+        )
+
+        missing_metrics = []
+
+        if execution_time is None:
+            missing_metrics.append(
+                "execution_time"
+            )
+
+        if cpu_usage is None:
+            missing_metrics.append(
+                "cpu_usage"
+            )
+
+        if memory_usage is None:
+            missing_metrics.append(
+                "memory_usage"
+            )
+
+        if energy_consumption is None:
+            missing_metrics.append(
+                "energy_consumption"
+            )
+
+        if missing_metrics:
+            skipped_results.append({
+                "language": language_name,
+                "status": "failed",
+                "reason": (
+                    "Missing benchmark metrics: "
+                    + ", ".join(missing_metrics)
+                ),
+            })
+            continue
 
         raw_results.append({
             "lang_id":
                 language.lang_id,
 
             "execution_time":
-                result["execution_time"],
+                execution_time,
 
             "cpu_usage":
-                result["cpu_usage"],
+                cpu_usage,
 
             "memory_usage":
-                result["memory_usage"],
+                memory_usage,
 
             "energy_consumption":
-                result["energy_consumption"],
+                energy_consumption,
 
             "output_verified":
-                result["output_verified"],
+                output_verified,
         })
 
+    if not raw_results:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "No implementation completed successfully, "
+                "so no benchmark measurements are available."
+            ),
+        )
 
     # -----------------------------------
     # Calculate Green Scores
@@ -2220,7 +2587,10 @@ def create_custom_comparison(
             resolved_benchmark_name
         ),
         workload_type=(
-            comparison.workload_type
+            resolved_workload.get(
+                "workload_type"
+            )
+            or comparison.workload_type
         ),
         input_size=(
             comparison.input_size
@@ -2265,7 +2635,10 @@ def create_custom_comparison(
             ),
             benchmark_metadata=benchmark_metadata,
             workload_type=(
-                comparison.workload_type
+                resolved_workload.get(
+                    "workload_type"
+                )
+                or comparison.workload_type
             ),
             input_size=(
                 comparison.input_size
