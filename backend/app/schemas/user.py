@@ -1,12 +1,21 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    ConfigDict,
+    field_validator,
+    model_validator
+)
 from typing import Optional
 from datetime import datetime
 import re
+
 from app.schemas.common_user import UserCredentialsBase
+
 
 # ---------------- REGISTER ----------------
 
 class UserCreate(UserCredentialsBase):
+
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
 
@@ -19,10 +28,12 @@ class UserCreate(UserCredentialsBase):
             return value
 
         if not value.endswith("@gmail.com"):
-            raise ValueError("Only Gmail addresses are allowed.")
+            raise ValueError(
+                "Only Gmail addresses are allowed."
+            )
 
         return value
-    
+
     # Phone Validation
     @field_validator("phone")
     @classmethod
@@ -32,7 +43,9 @@ class UserCreate(UserCredentialsBase):
             return value
 
         if not re.fullmatch(r"\d{10}", value):
-            raise ValueError("Phone number must contain exactly 10 digits.")
+            raise ValueError(
+                "Phone number must contain exactly 10 digits."
+            )
 
         return value
 
@@ -40,19 +53,32 @@ class UserCreate(UserCredentialsBase):
     def validate_contact(self):
 
         if self.email is None and self.phone is None:
-            raise ValueError("Either email or phone is required.")
+            raise ValueError(
+                "Either email or phone is required."
+            )
 
         return self
+
+
 # ---------------- LOGIN ----------------
 
 class UserLogin(BaseModel):
+
     email_or_phone: str
     password: str
-    
+
+
+# ---------------- GOOGLE LOGIN ----------------
+
+class GoogleLoginRequest(BaseModel):
+
+    credential: str
+
 
 # ---------------- RESPONSE ----------------
 
 class UserResponse(BaseModel):
+
     user_id: int
     name: str
     email: Optional[EmailStr]
@@ -60,12 +86,15 @@ class UserResponse(BaseModel):
     role: str
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 # ---------------- UPDATE PROFILE ----------------
 
 class UserUpdate(BaseModel):
+
     name: Optional[str] = None
     phone: Optional[str] = None
     password: Optional[str] = None
@@ -78,15 +107,27 @@ class UserUpdate(BaseModel):
             return value
 
         value = value.strip()
-        if not value:
-            raise ValueError("Name cannot be blank.")
-        if not re.fullmatch(r"[A-Za-z ]+", value):
-            raise ValueError("Name cannot contain numbers or special characters.")
 
-        if re.search(r"(.)\1\1", value.lower()):
-            raise ValueError("Name cannot contain three consecutive identical characters.")
+        if not value:
+            raise ValueError(
+                "Name cannot be blank."
+            )
+
+        if not re.fullmatch(r"[A-Za-z ]+", value):
+            raise ValueError(
+                "Name cannot contain numbers or special characters."
+            )
+
+        if re.search(
+            r"(.)\1\1",
+            value.lower()
+        ):
+            raise ValueError(
+                "Name cannot contain three consecutive identical characters."
+            )
 
         return value
+
     @field_validator("password")
     @classmethod
     def validate_password(cls, value):
@@ -132,6 +173,8 @@ class UserUpdate(BaseModel):
             return value
 
         if not re.fullmatch(r"\d{10}", value):
-            raise ValueError("Phone number must contain exactly 10 digits.")
+            raise ValueError(
+                "Phone number must contain exactly 10 digits."
+            )
 
         return value

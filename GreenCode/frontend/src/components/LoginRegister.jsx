@@ -14,7 +14,7 @@ import {
   FiCheckCircle,
   FiRefreshCw,
 } from "react-icons/fi";
-
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function LoginRegister({
   onClose,
@@ -239,6 +239,70 @@ export default function LoginRegister({
     } catch (error) {
       console.error("Login error:", error);
       alert("Unable to connect to backend.");
+    }
+  };
+
+
+  /* =====================================================
+     LOGIN — GOOGLE
+  ===================================================== */
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      if (!credentialResponse?.credential) {
+        alert("Google authentication failed. Please try again.");
+        return;
+      }
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/users/google",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            credential: credentialResponse.credential,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(
+          data.detail ||
+          "Google authentication failed."
+        );
+        return;
+      }
+
+      localStorage.setItem(
+        "access_token",
+        data.access_token
+      );
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(data.user)
+      );
+
+      if (onLogin) {
+        onLogin();
+      }
+
+      navigate("/dashboard", {
+        replace: true,
+      });
+
+    } catch (error) {
+      console.error(
+        "Google authentication error:",
+        error
+      );
+
+      alert(
+        "Unable to connect to backend for Google login."
+      );
     }
   };
 
@@ -1124,7 +1188,18 @@ if (registerPassword !== registerConfirm) {
                       <div className="flex-1 h-px bg-[#D5E6D8]" />
 
                     </div>
-
+                    {/* =====================================================
+    GOOGLE LOGIN
+===================================================== */}
+<div className="mt-4 flex justify-center">
+  <GoogleLogin
+    onSuccess={handleGoogleLogin}
+    onError={() => {
+      alert("Google login failed. Please try again.");
+    }}
+    useOneTap={false}
+  />
+</div>
 
                     {/* Phone Login
 
@@ -1761,13 +1836,35 @@ if (registerPassword !== registerConfirm) {
 
                     {/* Register */}
 
-                    <button
-                      type="submit"
-                      className={`${primaryButton} mt-6`}
-                    >
-                      Register
-                    </button>
+<button
+  type="submit"
+  className={`${primaryButton} mt-6`}
+>
+  Register
+</button>
 
+{/* =====================================================
+    REGISTER — GOOGLE
+===================================================== */}
+<div className="my-5 flex items-center">
+  <div className="flex-1 border-t border-gray-300"></div>
+
+  <span className="px-3 text-sm text-gray-500">
+    OR
+  </span>
+
+  <div className="flex-1 border-t border-gray-300"></div>
+</div>
+
+<div className="flex justify-center">
+  <GoogleLogin
+    onSuccess={handleGoogleLogin}
+    onError={() => {
+      alert("Google registration failed. Please try again.");
+    }}
+    useOneTap={false}
+  />
+</div>
 
                     <p
                       className="

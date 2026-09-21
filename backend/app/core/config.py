@@ -22,6 +22,12 @@ ACCESS_TOKEN_EXPIRE = timedelta(
 )
 
 # ==========================
+# Google OAuth Configuration
+# ==========================
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# ==========================
 # Email Configuration
 # ==========================
 

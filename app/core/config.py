@@ -1,10 +1,7 @@
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-# from pathlib import Path
 
-# Load .env
-# load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
 
 # ==========================
@@ -22,13 +19,19 @@ ACCESS_TOKEN_EXPIRE = timedelta(
 )
 
 # ==========================
+# Google OAuth Configuration
+# ==========================
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+
+# ==========================
 # Email Configuration
 # ==========================
 
 MAIL_SERVER = os.getenv("MAIL_SERVER")
-MAIL_PORT = int(os.getenv("MAIL_PORT"))
+MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
 MAIL_USERNAME = os.getenv("MAIL_USERNAME")
 MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 MAIL_FROM = os.getenv("MAIL_FROM")
-MAIL_STARTTLS = os.getenv("MAIL_STARTTLS") == "True"
-MAIL_SSL_TLS = os.getenv("MAIL_SSL_TLS") == "True"
+MAIL_STARTTLS = os.getenv("MAIL_STARTTLS", "True") == "True"
+MAIL_SSL_TLS = os.getenv("MAIL_SSL_TLS", "False") == "True"
