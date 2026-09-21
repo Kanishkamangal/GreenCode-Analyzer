@@ -1,0 +1,22 @@
+﻿Comparison Report,
+Comparison ID,3
+Benchmark Task,Merge Sort
+Category,Sorting
+Benchmark Size,medium
+Input Size,Not available
+Workload Type,Not available
+Created At,"18 Sep 2026, 19:11:51"
+Implementations,2
+
+Implementation Results
+Language,Compiler,Version,Analysis ID,Execution Time (ms),CPU Usage (%),Memory Usage (MB),Energy Consumption (J),Green Score,Green Score Label,Output Verified
+Kotlin,kotlinc,2.4.10,4,353.58,176.76,80.93,7.1228,65.00,Good,Yes
+PHP,php,8.5.9,5,2108.86,8.15,19.68,25.9937,35.00,Poor,Yes
+
+Validation
+Language,Analysis ID,Input Size,Benchmark Size,Output Verified
+Kotlin,4,50000,medium,Yes
+PHP,5,50000,medium,Yes
+
+Note,This comparison report is generated from stored benchmark analysis results. Generating the report does not rerun the benchmark.
+Energy Note,Energy values represent measured energy consumption during the stored benchmark execution.
