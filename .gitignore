@@ -1,0 +1,45 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Database backups
+*.dump
+*.sqlite
+*.sqlite3
+
+# Generated comparison reports
+backend/comparison_test.csv
+backend/comparison_test.pdf
+backend/comparison_test.xlsx
+backend/e2e_comparison_3.csv
+backend/e2e_comparison_3.pdf
+backend/e2e_comparison_3.xlsx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Compiled/test artifacts
+*.exe
+
+# Temporary Office files
+~$*.xlsx
+~$*.xls

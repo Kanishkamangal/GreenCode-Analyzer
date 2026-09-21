@@ -1,0 +1,34 @@
+{
+  "input_sizes": {
+    "small": 1000,
+    "medium": 10000,
+    "large": 100000
+  },
+  "languages": [
+    "c",
+    "cpp",
+    "java",
+    "python",
+    "javascript",
+    "csharp",
+    "go",
+    "rust",
+    "kotlin",
+    "php"
+  ],
+  "file_names": {
+    "c": "c.c",
+    "cpp": "cpp.cpp",
+    "java": "java.java",
+    "python": "python.py",
+    "javascript": "javascript.js",
+    "csharp": "csharp.cs",
+    "go": "go.go",
+    "rust": "rust.rs",
+    "kotlin": "kotlin.kt",
+    "php": "php.php"
+  },
+  "benchmark_count": 89,
+  "generated_file_count": 890,
+  "input_policy": "Backend generates one canonical dataset and sends identical stdin to every selected language."
+}
