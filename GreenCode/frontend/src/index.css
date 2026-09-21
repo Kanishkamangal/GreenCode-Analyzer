@@ -1,0 +1,265 @@
+@import "tailwindcss";
+
+/* =========================================================
+   GREEN CODE ANALYZER — GLOBAL THEME
+   ========================================================= */
+
+/* ===========================
+   GLOBAL
+=========================== */
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: #F9FAFA;
+  overflow-x: hidden;
+  font-family: Inter, sans-serif;
+}
+
+body {
+  color: #0F172A;
+}
+
+/* ===========================
+   SMOOTH SCROLL
+=========================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ===========================
+   GLOBAL BACKGROUND
+=========================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      rgba(22, 163, 74, 0.045),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 80% 70%,
+      rgba(11, 107, 43, 0.035),
+      transparent 30%
+    );
+
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* =========================================================
+   ORBIT
+   ========================================================= */
+
+.orbit {
+  position: absolute;
+  width: 560px;
+  height: 560px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  transform-origin: center;
+  animation: orbitRotate 18s linear infinite;
+}
+
+@keyframes orbitRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   KEEP CARDS UPRIGHT
+   ========================================================= */
+
+.metric-card {
+  position: absolute;
+  animation: counterRotate 18s linear infinite;
+  transform-origin: center;
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+@keyframes counterRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+/* =========================================================
+   GLOWING RINGS
+   ========================================================= */
+
+.glowRing {
+  box-shadow:
+    0 0 20px rgba(22, 163, 74, 0.12),
+    0 0 40px rgba(22, 163, 74, 0.08),
+    0 0 80px rgba(11, 107, 43, 0.05),
+    inset 0 0 20px rgba(22, 163, 74, 0.06);
+}
+
+/* =========================================================
+   CARD GLOW
+   ========================================================= */
+
+.metric-card {
+  position: absolute;
+
+  animation: counterRotate 18s linear infinite;
+
+  transform-origin: center;
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* =========================================================
+   BUTTON
+   ========================================================= */
+
+button {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* =========================================================
+   CODE EDITOR
+   ========================================================= */
+
+.editorGlow {
+  box-shadow:
+    0 0 25px rgba(22, 163, 74, 0.10),
+    0 0 60px rgba(11, 107, 43, 0.06);
+}
+
+/* =========================================================
+   BENCHMARK ANIMATION
+   ========================================================= */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   GREEN CODE ANALYZER COLOR HELPERS
+   ========================================================= */
+
+:root {
+  --navbar-bg: #E6F2E6;
+
+  --page-bg: #F9FAFA;
+
+  --card-bg: #FFFFFF;
+
+  --primary-green: #0B6B2B;
+
+  --secondary-green: #16A34A;
+
+  --light-green: #DFF0E1;
+
+  --green-glow: #EAF6EC;
+
+  --heading: #0F172A;
+
+  --body-text: #526174;
+
+  --muted-text: #6B7280;
+
+  --border: #D5E6D8;
+
+  --code-comment: #15803D;
+
+  --code-keyword: #2563EB;
+
+  --code-string: #EA580C;
+}
+
+/* =========================================================
+   TEXT SELECTION
+   ========================================================= */
+
+::selection {
+  background: #DFF0E1;
+  color: #0B6B2B;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F9FAFA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D5E6D8;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #16A34A;
+}
+
+@keyframes plantSway {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-2deg);
+  }
+
+  50% {
+    transform: rotate(1.8deg);
+  }
+
+  75% {
+    transform: rotate(-1.2deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-plant-sway {
+  animation: plantSway 2s ease-in-out infinite;
+  transform-origin: bottom center;
+}

@@ -1,0 +1,6 @@
+// GreenCode Analyzer generated benchmark template
+// Language: PHP
+// The generator replaces {ALGORITHM_IMPLEMENTATION} with the benchmark implementation.
+<?php
+// {{ALGORITHM_IMPLEMENTATION}}
+?>

@@ -1,0 +1,625 @@
+[
+  {
+    "bench_id": 1,
+    "bench_name": "Bubble Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "bubble_sort"
+  },
+  {
+    "bench_id": 2,
+    "bench_name": "Selection Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "selection_sort"
+  },
+  {
+    "bench_id": 3,
+    "bench_name": "Insertion Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "insertion_sort"
+  },
+  {
+    "bench_id": 4,
+    "bench_name": "Merge Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "merge_sort"
+  },
+  {
+    "bench_id": 5,
+    "bench_name": "Quick Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "quick_sort"
+  },
+  {
+    "bench_id": 6,
+    "bench_name": "Heap Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "heap_sort"
+  },
+  {
+    "bench_id": 7,
+    "bench_name": "Counting Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "counting_sort"
+  },
+  {
+    "bench_id": 8,
+    "bench_name": "Radix Sort",
+    "bench_type": "Predefined",
+    "category": "Sorting",
+    "slug": "radix_sort"
+  },
+  {
+    "bench_id": 9,
+    "bench_name": "Linear Search",
+    "bench_type": "Predefined",
+    "category": "Searching",
+    "slug": "linear_search"
+  },
+  {
+    "bench_id": 10,
+    "bench_name": "Binary Search",
+    "bench_type": "Predefined",
+    "category": "Searching",
+    "slug": "binary_search"
+  },
+  {
+    "bench_id": 11,
+    "bench_name": "Jump Search",
+    "bench_type": "Predefined",
+    "category": "Searching",
+    "slug": "jump_search"
+  },
+  {
+    "bench_id": 12,
+    "bench_name": "Interpolation Search",
+    "bench_type": "Predefined",
+    "category": "Searching",
+    "slug": "interpolation_search"
+  },
+  {
+    "bench_id": 13,
+    "bench_name": "Find Maximum Element",
+    "bench_type": "Predefined",
+    "category": "Arrays",
+    "slug": "find_maximum_element"
+  },
+  {
+    "bench_id": 14,
+    "bench_name": "Find Minimum Element",
+    "bench_type": "Predefined",
+    "category": "Arrays",
+    "slug": "find_minimum_element"
+  },
+  {
+    "bench_id": 15,
+    "bench_name": "Array Rotation",
+    "bench_type": "Predefined",
+    "category": "Arrays",
+    "slug": "array_rotation"
+  },
+  {
+    "bench_id": 16,
+    "bench_name": "Prefix Sum",
+    "bench_type": "Predefined",
+    "category": "Arrays",
+    "slug": "prefix_sum"
+  },
+  {
+    "bench_id": 17,
+    "bench_name": "Kadane's Algorithm",
+    "bench_type": "Predefined",
+    "category": "Arrays",
+    "slug": "kadane_s_algorithm"
+  },
+  {
+    "bench_id": 18,
+    "bench_name": "Two Sum",
+    "bench_type": "Predefined",
+    "category": "Arrays",
+    "slug": "two_sum"
+  },
+  {
+    "bench_id": 19,
+    "bench_name": "Reverse String",
+    "bench_type": "Predefined",
+    "category": "Strings",
+    "slug": "reverse_string"
+  },
+  {
+    "bench_id": 20,
+    "bench_name": "Palindrome Check",
+    "bench_type": "Predefined",
+    "category": "Strings",
+    "slug": "palindrome_check"
+  },
+  {
+    "bench_id": 21,
+    "bench_name": "Anagram Check",
+    "bench_type": "Predefined",
+    "category": "Strings",
+    "slug": "anagram_check"
+  },
+  {
+    "bench_id": 22,
+    "bench_name": "Substring Search",
+    "bench_type": "Predefined",
+    "category": "Strings",
+    "slug": "substring_search"
+  },
+  {
+    "bench_id": 23,
+    "bench_name": "Longest Common Prefix",
+    "bench_type": "Predefined",
+    "category": "Strings",
+    "slug": "longest_common_prefix"
+  },
+  {
+    "bench_id": 24,
+    "bench_name": "Matrix Multiplication",
+    "bench_type": "Predefined",
+    "category": "Matrix",
+    "slug": "matrix_multiplication"
+  },
+  {
+    "bench_id": 25,
+    "bench_name": "Matrix Transpose",
+    "bench_type": "Predefined",
+    "category": "Matrix",
+    "slug": "matrix_transpose"
+  },
+  {
+    "bench_id": 26,
+    "bench_name": "Spiral Matrix Traversal",
+    "bench_type": "Predefined",
+    "category": "Matrix",
+    "slug": "spiral_matrix_traversal"
+  },
+  {
+    "bench_id": 27,
+    "bench_name": "Rotate Matrix",
+    "bench_type": "Predefined",
+    "category": "Matrix",
+    "slug": "rotate_matrix"
+  },
+  {
+    "bench_id": 28,
+    "bench_name": "Prime Number Check",
+    "bench_type": "Predefined",
+    "category": "Mathematics",
+    "slug": "prime_number_check"
+  },
+  {
+    "bench_id": 29,
+    "bench_name": "Factorial",
+    "bench_type": "Predefined",
+    "category": "Mathematics",
+    "slug": "factorial"
+  },
+  {
+    "bench_id": 30,
+    "bench_name": "GCD",
+    "bench_type": "Predefined",
+    "category": "Mathematics",
+    "slug": "gcd"
+  },
+  {
+    "bench_id": 31,
+    "bench_name": "LCM",
+    "bench_type": "Predefined",
+    "category": "Mathematics",
+    "slug": "lcm"
+  },
+  {
+    "bench_id": 32,
+    "bench_name": "Power Calculation",
+    "bench_type": "Predefined",
+    "category": "Mathematics",
+    "slug": "power_calculation"
+  },
+  {
+    "bench_id": 33,
+    "bench_name": "Sieve of Eratosthenes",
+    "bench_type": "Predefined",
+    "category": "Mathematics",
+    "slug": "sieve_of_eratosthenes"
+  },
+  {
+    "bench_id": 34,
+    "bench_name": "Fibonacci",
+    "bench_type": "Predefined",
+    "category": "Recursion",
+    "slug": "fibonacci"
+  },
+  {
+    "bench_id": 35,
+    "bench_name": "Tower of Hanoi",
+    "bench_type": "Predefined",
+    "category": "Recursion",
+    "slug": "tower_of_hanoi"
+  },
+  {
+    "bench_id": 36,
+    "bench_name": "Generate Permutations",
+    "bench_type": "Predefined",
+    "category": "Recursion",
+    "slug": "generate_permutations"
+  },
+  {
+    "bench_id": 37,
+    "bench_name": "Generate Subsets",
+    "bench_type": "Predefined",
+    "category": "Recursion",
+    "slug": "generate_subsets"
+  },
+  {
+    "bench_id": 38,
+    "bench_name": "BFS Traversal",
+    "bench_type": "Predefined",
+    "category": "Graph",
+    "slug": "bfs_traversal"
+  },
+  {
+    "bench_id": 39,
+    "bench_name": "DFS Traversal",
+    "bench_type": "Predefined",
+    "category": "Graph",
+    "slug": "dfs_traversal"
+  },
+  {
+    "bench_id": 40,
+    "bench_name": "Dijkstra Algorithm",
+    "bench_type": "Predefined",
+    "category": "Graph",
+    "slug": "dijkstra_algorithm"
+  },
+  {
+    "bench_id": 41,
+    "bench_name": "Topological Sort",
+    "bench_type": "Predefined",
+    "category": "Graph",
+    "slug": "topological_sort"
+  },
+  {
+    "bench_id": 42,
+    "bench_name": "Minimum Spanning Tree",
+    "bench_type": "Predefined",
+    "category": "Graph",
+    "slug": "minimum_spanning_tree"
+  },
+  {
+    "bench_id": 43,
+    "bench_name": "Cycle Detection",
+    "bench_type": "Predefined",
+    "category": "Graph",
+    "slug": "cycle_detection"
+  },
+  {
+    "bench_id": 44,
+    "bench_name": "0/1 Knapsack",
+    "bench_type": "Predefined",
+    "category": "Dynamic Programming",
+    "slug": "zero_one_knapsack"
+  },
+  {
+    "bench_id": 45,
+    "bench_name": "Coin Change",
+    "bench_type": "Predefined",
+    "category": "Dynamic Programming",
+    "slug": "coin_change"
+  },
+  {
+    "bench_id": 46,
+    "bench_name": "Longest Common Subsequence",
+    "bench_type": "Predefined",
+    "category": "Dynamic Programming",
+    "slug": "longest_common_subsequence"
+  },
+  {
+    "bench_id": 47,
+    "bench_name": "Longest Increasing Subsequence",
+    "bench_type": "Predefined",
+    "category": "Dynamic Programming",
+    "slug": "longest_increasing_subsequence"
+  },
+  {
+    "bench_id": 48,
+    "bench_name": "Matrix Chain Multiplication",
+    "bench_type": "Predefined",
+    "category": "Dynamic Programming",
+    "slug": "matrix_chain_multiplication"
+  },
+  {
+    "bench_id": 49,
+    "bench_name": "Edit Distance",
+    "bench_type": "Predefined",
+    "category": "Dynamic Programming",
+    "slug": "edit_distance"
+  },
+  {
+    "bench_id": 50,
+    "bench_name": "File Read",
+    "bench_type": "Predefined",
+    "category": "File Handling",
+    "slug": "file_read"
+  },
+  {
+    "bench_id": 51,
+    "bench_name": "File Write",
+    "bench_type": "Predefined",
+    "category": "File Handling",
+    "slug": "file_write"
+  },
+  {
+    "bench_id": 52,
+    "bench_name": "Word Count",
+    "bench_type": "Predefined",
+    "category": "File Handling",
+    "slug": "word_count"
+  },
+  {
+    "bench_id": 53,
+    "bench_name": "Binary Search Tree",
+    "bench_type": "Predefined",
+    "category": "Trees",
+    "slug": "binary_search_tree"
+  },
+  {
+    "bench_id": 54,
+    "bench_name": "AVL Tree",
+    "bench_type": "Predefined",
+    "category": "Trees",
+    "slug": "avl_tree"
+  },
+  {
+    "bench_id": 55,
+    "bench_name": "Trie Operations",
+    "bench_type": "Predefined",
+    "category": "Trees",
+    "slug": "trie_operations"
+  },
+  {
+    "bench_id": 56,
+    "bench_name": "Segment Tree",
+    "bench_type": "Predefined",
+    "category": "Trees",
+    "slug": "segment_tree"
+  },
+  {
+    "bench_id": 57,
+    "bench_name": "Fenwick Tree",
+    "bench_type": "Predefined",
+    "category": "Trees",
+    "slug": "fenwick_tree"
+  },
+  {
+    "bench_id": 58,
+    "bench_name": "Reverse Linked List",
+    "bench_type": "Predefined",
+    "category": "Linked List",
+    "slug": "reverse_linked_list"
+  },
+  {
+    "bench_id": 59,
+    "bench_name": "Detect Cycle in Linked List",
+    "bench_type": "Predefined",
+    "category": "Linked List",
+    "slug": "detect_cycle_in_linked_list"
+  },
+  {
+    "bench_id": 60,
+    "bench_name": "Merge Two Sorted Linked Lists",
+    "bench_type": "Predefined",
+    "category": "Linked List",
+    "slug": "merge_two_sorted_linked_lists"
+  },
+  {
+    "bench_id": 61,
+    "bench_name": "Remove Nth Node From End",
+    "bench_type": "Predefined",
+    "category": "Linked List",
+    "slug": "remove_nth_node_from_end"
+  },
+  {
+    "bench_id": 62,
+    "bench_name": "Balanced Parentheses",
+    "bench_type": "Predefined",
+    "category": "Stacks & Queues",
+    "slug": "balanced_parentheses"
+  },
+  {
+    "bench_id": 63,
+    "bench_name": "Infix to Postfix",
+    "bench_type": "Predefined",
+    "category": "Stacks & Queues",
+    "slug": "infix_to_postfix"
+  },
+  {
+    "bench_id": 64,
+    "bench_name": "Queue Using Two Stacks",
+    "bench_type": "Predefined",
+    "category": "Stacks & Queues",
+    "slug": "queue_using_two_stacks"
+  },
+  {
+    "bench_id": 65,
+    "bench_name": "Stack Using Queues",
+    "bench_type": "Predefined",
+    "category": "Stacks & Queues",
+    "slug": "stack_using_queues"
+  },
+  {
+    "bench_id": 66,
+    "bench_name": "Frequency Counter",
+    "bench_type": "Predefined",
+    "category": "Hashing",
+    "slug": "frequency_counter"
+  },
+  {
+    "bench_id": 67,
+    "bench_name": "First Non-Repeating Character",
+    "bench_type": "Predefined",
+    "category": "Hashing",
+    "slug": "first_non_repeating_character"
+  },
+  {
+    "bench_id": 68,
+    "bench_name": "Group Anagrams",
+    "bench_type": "Predefined",
+    "category": "Hashing",
+    "slug": "group_anagrams"
+  },
+  {
+    "bench_id": 69,
+    "bench_name": "Longest Consecutive Sequence",
+    "bench_type": "Predefined",
+    "category": "Hashing",
+    "slug": "longest_consecutive_sequence"
+  },
+  {
+    "bench_id": 70,
+    "bench_name": "Activity Selection",
+    "bench_type": "Predefined",
+    "category": "Greedy",
+    "slug": "activity_selection"
+  },
+  {
+    "bench_id": 71,
+    "bench_name": "Fractional Knapsack",
+    "bench_type": "Predefined",
+    "category": "Greedy",
+    "slug": "fractional_knapsack"
+  },
+  {
+    "bench_id": 72,
+    "bench_name": "Job Sequencing",
+    "bench_type": "Predefined",
+    "category": "Greedy",
+    "slug": "job_sequencing"
+  },
+  {
+    "bench_id": 73,
+    "bench_name": "Huffman Coding",
+    "bench_type": "Predefined",
+    "category": "Greedy",
+    "slug": "huffman_coding"
+  },
+  {
+    "bench_id": 74,
+    "bench_name": "N Queens",
+    "bench_type": "Predefined",
+    "category": "Backtracking",
+    "slug": "n_queens"
+  },
+  {
+    "bench_id": 75,
+    "bench_name": "Sudoku Solver",
+    "bench_type": "Predefined",
+    "category": "Backtracking",
+    "slug": "sudoku_solver"
+  },
+  {
+    "bench_id": 76,
+    "bench_name": "Rat in a Maze",
+    "bench_type": "Predefined",
+    "category": "Backtracking",
+    "slug": "rat_in_a_maze"
+  },
+  {
+    "bench_id": 77,
+    "bench_name": "Word Search",
+    "bench_type": "Predefined",
+    "category": "Backtracking",
+    "slug": "word_search"
+  },
+  {
+    "bench_id": 78,
+    "bench_name": "Count Set Bits",
+    "bench_type": "Predefined",
+    "category": "Bit Manipulation",
+    "slug": "count_set_bits"
+  },
+  {
+    "bench_id": 79,
+    "bench_name": "Power of Two",
+    "bench_type": "Predefined",
+    "category": "Bit Manipulation",
+    "slug": "power_of_two"
+  },
+  {
+    "bench_id": 80,
+    "bench_name": "Single Number",
+    "bench_type": "Predefined",
+    "category": "Bit Manipulation",
+    "slug": "single_number"
+  },
+  {
+    "bench_id": 81,
+    "bench_name": "Bitwise XOR Operations",
+    "bench_type": "Predefined",
+    "category": "Bit Manipulation",
+    "slug": "bitwise_xor_operations"
+  },
+  {
+    "bench_id": 82,
+    "bench_name": "Maximum Sum Subarray",
+    "bench_type": "Predefined",
+    "category": "Sliding Window",
+    "slug": "maximum_sum_subarray"
+  },
+  {
+    "bench_id": 83,
+    "bench_name": "Longest Substring Without Repeating Characters",
+    "bench_type": "Predefined",
+    "category": "Sliding Window",
+    "slug": "longest_substring_without_repeating_characters"
+  },
+  {
+    "bench_id": 84,
+    "bench_name": "Minimum Window Substring",
+    "bench_type": "Predefined",
+    "category": "Sliding Window",
+    "slug": "minimum_window_substring"
+  },
+  {
+    "bench_id": 85,
+    "bench_name": "Sliding Window Maximum",
+    "bench_type": "Predefined",
+    "category": "Sliding Window",
+    "slug": "sliding_window_maximum"
+  },
+  {
+    "bench_id": 86,
+    "bench_name": "Kth Largest Element",
+    "bench_type": "Predefined",
+    "category": "Heap",
+    "slug": "kth_largest_element"
+  },
+  {
+    "bench_id": 87,
+    "bench_name": "Merge K Sorted Arrays",
+    "bench_type": "Predefined",
+    "category": "Heap",
+    "slug": "merge_k_sorted_arrays"
+  },
+  {
+    "bench_id": 88,
+    "bench_name": "Top K Frequent Elements",
+    "bench_type": "Predefined",
+    "category": "Heap",
+    "slug": "top_k_frequent_elements"
+  },
+  {
+    "bench_id": 89,
+    "bench_name": "Median of Data Stream",
+    "bench_type": "Predefined",
+    "category": "Heap",
+    "slug": "median_of_data_stream"
+  }
+]
