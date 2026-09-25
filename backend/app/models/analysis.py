@@ -26,8 +26,6 @@ class Analysis(Base):
     __tablename__ = "analysis"
 
     analysis_id = Column(Integer, primary_key=True, index=True)
-
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     comparison_id = Column(
         Integer,
         ForeignKey("comparisons.comparison_id"),
@@ -38,6 +36,7 @@ class Analysis(Base):
         "Comparison",
         back_populates="analyses",
     )
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     bench_id = Column(Integer, ForeignKey("benchmark.bench_id"), nullable=True)
     lang_id = Column(Integer, ForeignKey("programming_language.lang_id"), nullable=False)
     analysis_type = Column(String(20),nullable=False)
@@ -92,6 +91,5 @@ class Analysis(Base):
     report = relationship(
         "Report",
         back_populates="analysis",
-        uselist=False
+        uselist=False,
     )
-    

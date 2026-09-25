@@ -13,5 +13,5 @@ class ProgrammingLanguage(Base):
     version = Column(String(30), nullable=False)
     compile_command = Column(String(255), nullable=True)
     run_command = Column(String(255), nullable=False)
-    
+
     analyses = relationship("Analysis", back_populates="language")
