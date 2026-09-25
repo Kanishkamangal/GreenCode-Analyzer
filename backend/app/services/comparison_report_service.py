@@ -149,5 +149,3 @@ def get_comparison_report_data(
         created_at=comparison.created_at,
         results=results,
     )
-
-

@@ -40,24 +40,24 @@ async def send_email(
     await fm.send_message(message)
 
 
-async def send_otp_email(recipient: EmailStr, otp: str):
+async def send_otp_email(email: EmailStr, otp: str):
 
-    subject = "GreenCode Analyzer - OTP Verification"
+    subject = "GreenCode Analyzer - Email Verification OTP"
 
     body = f"""
     <h2>GreenCode Analyzer</h2>
 
-    <p>Your OTP is:</p>
+    <p>Your OTP for email verification is:</p>
 
     <h1>{otp}</h1>
 
     <p>This OTP is valid for 5 minutes.</p>
 
-    <p>Please do not share it with anyone.</p>
+    <p>If you did not request this, please ignore this email.</p>
     """
 
     await send_email(
-        recipient=recipient,
+        recipient=email,
         subject=subject,
         body=body
-    )
+    )    

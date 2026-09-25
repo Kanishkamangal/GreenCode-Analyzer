@@ -3527,6 +3527,133 @@ def _detect_library_signals(
 
     return detected, evidence
 
+def _has_recursive_self_call(
+    reference_code: str,
+    function_name: str,
+) -> bool:
+    """
+    Conservative source-level recursion fallback.
+
+    A function declaration plus a normal call from outside the
+    function must NOT be treated as recursion.
+
+    Recursion is reported only when the function name appears as
+    a call inside its own function body.
+    """
+    name = (function_name or "").strip()
+
+    if not name:
+        return False
+
+    escaped_name = re.escape(name)
+
+    # Common cross-language function/method declarations.
+    declaration_patterns = (
+        # Python
+        rf"\bdef\s+{escaped_name}\s*\([^)]*\)\s*:",
+
+        # JavaScript
+        rf"\bfunction\s+{escaped_name}\s*\([^)]*\)\s*\{{",
+
+        # C / C++ / Java / C# / Kotlin-like declarations
+        rf"\b(?:public\s+|private\s+|protected\s+|static\s+|"
+        rf"final\s+|inline\s+|virtual\s+|suspend\s+)*"
+        rf"[A-Za-z_][\w<>\[\],.?*&:\s]*\s+"
+        rf"{escaped_name}\s*\([^;{{}}]*\)\s*\{{",
+
+        # Go
+        rf"\bfunc\s+{escaped_name}\s*\([^)]*\)[^{{]*\{{",
+
+        # Rust
+        rf"\bfn\s+{escaped_name}\s*\([^)]*\)[^{{]*\{{",
+
+        # PHP
+        rf"\bfunction\s+{escaped_name}\s*\([^)]*\)\s*\{{",
+    )
+
+    declaration_match = None
+
+    for pattern in declaration_patterns:
+        declaration_match = re.search(
+            pattern,
+            reference_code,
+            flags=re.IGNORECASE | re.MULTILINE,
+        )
+
+        if declaration_match:
+            break
+
+    if not declaration_match:
+        return False
+
+    body_start = declaration_match.end()
+
+    # Python: inspect the indented function body.
+    if re.match(
+        rf"\s*def\s+{escaped_name}\b",
+        declaration_match.group(0),
+        flags=re.IGNORECASE,
+    ):
+        lines = reference_code[body_start:].splitlines()
+
+        body_lines = []
+
+        for line in lines:
+            if not line.strip():
+                body_lines.append(line)
+                continue
+
+            if line[:1].isspace():
+                body_lines.append(line)
+                continue
+
+            break
+
+        body = "\n".join(body_lines)
+
+    else:
+        # Brace-based languages: find the matching closing brace.
+        opening_brace = reference_code.find(
+            "{",
+            declaration_match.start(),
+        )
+
+        if opening_brace == -1:
+            return False
+
+        depth = 0
+        closing_brace = None
+
+        for index in range(
+            opening_brace,
+            len(reference_code),
+        ):
+            char = reference_code[index]
+
+            if char == "{":
+                depth += 1
+
+            elif char == "}":
+                depth -= 1
+
+                if depth == 0:
+                    closing_brace = index
+                    break
+
+        if closing_brace is None:
+            return False
+
+        body = reference_code[
+            opening_brace + 1:closing_brace
+        ]
+
+    return bool(
+        re.search(
+            rf"\b{escaped_name}\s*\(",
+            body,
+            flags=re.IGNORECASE,
+        )
+    )
 
 def _extract_semantic_signals(
     reference_code: str,
@@ -3591,29 +3718,95 @@ def _extract_semantic_signals(
     ):
         features.boundary_narrowing_signals += 2
 
-    if (
+    # --------------------------------------------------------
+    # Two-pointer structural signal
+    # --------------------------------------------------------
+    # A normal loop such as:
+    #
+    #     for (let i = 0; i < n; i++)
+    #
+    # must NOT be classified as two-pointers.
+    #
+    # Two-pointers requires evidence for TWO distinct moving
+    # indices/boundaries.
+
+    left_right_pair = (
         _contains_any(
             source,
-            ("left", "right", "l =", "r =", "i =", "j ="),
+            (
+                "left =",
+                "left=",
+                "l =",
+                "l=",
+            ),
+        )
+        and _contains_any(
+            source,
+            (
+                "right =",
+                "right=",
+                "r =",
+                "r=",
+            ),
         )
         and _contains_any(
             source,
             (
                 "left += 1",
-                "left -= 1",
-                "right += 1",
-                "right -= 1",
+                "left++",
+                "++left",
                 "l += 1",
-                "l -= 1",
-                "r += 1",
-                "r -= 1",
-                "++i",
-                "i++",
-                "--j",
-                "j--",
+                "l++",
+                "++l",
             ),
         )
-    ):
+        and _contains_any(
+            source,
+            (
+                "right -= 1",
+                "right--",
+                "--right",
+                "r -= 1",
+                "r--",
+                "--r",
+            ),
+        )
+    )
+
+    ij_pair = (
+        _contains_any(
+            source,
+            (
+                "i =",
+                "i=",
+            ),
+        )
+        and _contains_any(
+            source,
+            (
+                "j =",
+                "j=",
+            ),
+        )
+        and _contains_any(
+            source,
+            (
+                "i += 1",
+                "i++",
+                "++i",
+            ),
+        )
+        and _contains_any(
+            source,
+            (
+                "j -= 1",
+                "j--",
+                "--j",
+            ),
+        )
+    )
+
+    if left_right_pair or ij_pair:
         features.pointer_pair_signals += 2
 
     if (
@@ -3679,16 +3872,6 @@ def _extract_semantic_signals(
         )
     ):
         features.prefix_recurrence_signals += 2
-
-    for name in function_names:
-        normalized_name = name.strip().lower()
-
-        if (
-            normalized_name
-            and source.count(f"{normalized_name}(") >= 2
-        ):
-            features.recursion_signals += 1
-            features.self_call_names.add(normalized_name)
 
     if (
         _contains_any(source, (".left", "->left", "left_child", "leftchild"))
@@ -3828,12 +4011,13 @@ def _extract_algorithm_signals(
         for name in function_names
     }
 
-    # Recursive calls are primarily determined from AST function
-    # declarations/call structure below. This textual fallback
-    # only catches common self-call forms.
     for name in function_names:
-        if source.count(f"{name}(") >= 2:
+        if _has_recursive_self_call(
+            reference_code,
+            name,
+        ):
             features.recursion_signals += 1
+            features.self_call_names.add(name)
 
     # --------------------------------------------------------
     # Two pointers

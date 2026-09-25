@@ -1,7 +1,6 @@
 import os
-import shutil
+import re
 import subprocess
-import tempfile
 import time
 from pathlib import Path
 
@@ -70,23 +69,17 @@ def compile_program(
             "program.exe"
         )
 
-        try:
-            result = subprocess.run(
-                [
-                    "gcc",
-                    source_file,
-                    "-O2",
-                    "-fno-lto",
-                    "-o",
-                    executable
-                ],
-                capture_output=True,
-                text=True
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                "GCC compiler not found. Please install MinGW or ensure GCC is in your PATH."
-            )
+        result = subprocess.run(
+            [
+                "gcc",
+                source_file,
+                "-O2",
+                "-o",
+                executable
+            ],
+            capture_output=True,
+            text=True
+        )
 
         if result.returncode != 0:
             raise RuntimeError(
@@ -102,24 +95,18 @@ def compile_program(
             "program.exe"
         )
 
-        try:
-            result = subprocess.run(
-                [
+        result = subprocess.run(
+            [
                 "g++",
                 "-O2",
-                "-fno-lto",
                 "-std=c++17",
                 source_file,
                 "-o",
                 executable
             ],
-                capture_output=True,
-                text=True
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                "G++ compiler not found. Please install MinGW or ensure G++ is in your PATH."
-            )
+            capture_output=True,
+            text=True
+        )
 
         if result.returncode != 0:
             raise RuntimeError(
@@ -130,85 +117,52 @@ def compile_program(
 
     elif language == "java":
 
-        # Java source files in our benchmark library may be named
-        # java.java, but the implementation uses:
-        #
-        # public class Main
-        #
-        # Java requires the public class name to match the filename.
-        # Therefore create a temporary Main.java.
-
         java_source = Path(source_file)
 
-        main_file = Path(output_dir) / "Main.java"
-
-        with open(java_source, "r", encoding="utf-8") as src:
-            java_code = src.read()
-
-        with open(main_file, "w", encoding="utf-8") as dst:
-            dst.write(java_code)
-
-        # Find javac in PATH or use specific locations
-        javac_path = shutil.which("javac")
-        if not javac_path:
-            # Try common JDK locations
-            for jdk_path in [
-                r"C:\Program Files\Microsoft\jdk-25.0.4.101-hotspot\bin\javac.exe",
-                r"C:\Program Files\Java\jdk-25\bin\javac.exe",
+        result = subprocess.run(
+            [
                 r"C:\Program Files\Java\jdk-24\bin\javac.exe",
-            ]:
-                if os.path.exists(jdk_path):
-                    javac_path = jdk_path
-                    break
-
-        if not javac_path:
-            raise RuntimeError(
-                "Java JDK not found. Please install JDK or ensure javac is in your PATH."
-            )
-
-        try:
-            result = subprocess.run(
-                [
-                    javac_path,
-                    "Main.java"
-                ],
-                cwd=output_dir,
-                capture_output=True,
-                text=True
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                f"Java compiler not found at {javac_path}"
-            )
+                java_source.name,
+            ],
+            cwd=str(java_source.parent),
+            capture_output=True,
+            text=True,
+        )
 
         if result.returncode != 0:
             raise RuntimeError(
                 f"Java compilation failed:\n{result.stderr}"
             )
 
-        # Find java in PATH
-        java_exe = shutil.which("java")
-        if not java_exe:
-            # Try common JDK locations
-            for jdk_path in [
-                r"C:\Program Files\Microsoft\jdk-25.0.4.101-hotspot\bin\java.exe",
-                r"C:\Program Files\Java\jdk-25\bin\java.exe",
-                r"C:\Program Files\Java\jdk-24\bin\java.exe",
-            ]:
-                if os.path.exists(jdk_path):
-                    java_exe = jdk_path
-                    break
+        # Determine the class containing the main method.
+        java_code = java_source.read_text(encoding="utf-8")
 
-        if not java_exe:
-            raise RuntimeError(
-                "Java runtime not found. Please install JDK or ensure java is in your PATH."
+        class_match = re.search(
+            r"\bpublic\s+(?:final\s+|abstract\s+)?class\s+"
+            r"([A-Za-z_$][A-Za-z0-9_$]*)",
+            java_code,
+        )
+
+        if not class_match:
+            class_match = re.search(
+                r"\bclass\s+([A-Za-z_$][A-Za-z0-9_$]*)",
+                java_code,
             )
+
+        if not class_match:
+            raise RuntimeError(
+                "Java compilation succeeded but no class name could be determined."
+            )
+
+        class_name = class_match.group(1)
+
+        java_exe = r"C:\Program Files\Java\jdk-24\bin\java.exe"
 
         return [
             java_exe,
             "-cp",
-            output_dir,
-            "Main"
+            str(java_source.parent),
+            class_name,
         ]
 
     elif language == "go":
@@ -218,22 +172,17 @@ def compile_program(
             "program.exe"
         )
 
-        try:
-            result = subprocess.run(
-                [
-                    "go",
-                    "build",
-                    "-o",
-                    executable,
-                    source_file
-                ],
-                capture_output=True,
-                text=True
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                "Go compiler not found. Please install Go or ensure it is in your PATH."
-            )
+        result = subprocess.run(
+            [
+                "go",
+                "build",
+                "-o",
+                executable,
+                source_file
+            ],
+            capture_output=True,
+            text=True
+        )
 
         if result.returncode != 0:
             raise RuntimeError(
@@ -249,22 +198,17 @@ def compile_program(
             "program.exe"
         )
 
-        try:
-            result = subprocess.run(
-                [
-                    "rustc",
-                    "-O",
-                    source_file,
-                    "-o",
-                    executable
-                ],
-                capture_output=True,
-                text=True
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                "Rustc compiler not found. Please install Rust or ensure it is in your PATH."
-            )
+        result = subprocess.run(
+            [
+                "rustc",
+                "-O",
+                source_file,
+                "-o",
+                executable
+            ],
+            capture_output=True,
+            text=True
+        )
 
         if result.returncode != 0:
             raise RuntimeError(
@@ -344,54 +288,17 @@ def compile_program(
             "program.jar"
         )
 
-        kotlinc_path = shutil.which("kotlinc")
-        if not kotlinc_path:
-            for kotlin_path in [
-                r"C:\Kotlin\kotlinc\kotlinc\bin\kotlinc.bat",
-            ]:
-                if os.path.exists(kotlin_path):
-                    kotlinc_path = kotlin_path
-                    break
-
-        if not kotlinc_path:
-            raise RuntimeError(
-                "Kotlin compiler not found. Please install Kotlin or ensure kotlinc is in your PATH."
-            )
-
-        java_exe = shutil.which("java")
-        if not java_exe:
-            for jdk_path in [
-                r"C:\Program Files\Microsoft\jdk-25.0.4.101-hotspot\bin\java.exe",
-                r"C:\Program Files\Java\jdk-25\bin\java.exe",
-                r"C:\Program Files\Java\jdk-24\bin\java.exe",
-            ]:
-                if os.path.exists(jdk_path):
-                    java_exe = jdk_path
-                    break
-
-        if not java_exe:
-            raise RuntimeError(
-                "Java runtime not found. Please install a JDK or ensure java is in your PATH."
-            )
-
-        try:
-            result = subprocess.run(
-                [
-                    os.environ.get("COMSPEC", "cmd.exe"),
-                    "/c",
-                    kotlinc_path,
-                    source_file,
-                    "-include-runtime",
-                    "-d",
-                    executable
-                ],
-                capture_output=True,
-                text=True
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                "Kotlin compiler not found. Please install Kotlin or ensure kotlinc is in your PATH."
-            )
+        result = subprocess.run(
+            [
+                r"C:\Kotlin\kotlinc\bin\kotlinc.bat",
+                source_file,
+                "-include-runtime",
+                "-d",
+                executable
+            ],
+            capture_output=True,
+            text=True
+        )
 
         if result.returncode != 0:
                 raise RuntimeError(
@@ -399,7 +306,7 @@ def compile_program(
                 )
 
         return [
-                java_exe,
+            r"C:\Program Files\Java\jdk-24\bin\java.exe",
             "-jar",
             executable
         ]

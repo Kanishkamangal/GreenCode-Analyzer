@@ -16,8 +16,9 @@ def create_analysis(
 ):
 
     new_analysis = Analysis(
-    user_id=analysis.user_id,
     comparison_id=analysis.comparison_id,
+    user_id=analysis.user_id,
+
     analysis_type=analysis.analysis_type,
 
     bench_id=analysis.bench_id,

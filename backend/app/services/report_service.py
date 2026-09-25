@@ -1,57 +1,3 @@
-# from sqlalchemy.orm import Session
-
-# from app.models.report import Report
-# from app.schemas.report import ReportCreate
-
-
-# def create_report(db: Session, report: ReportCreate):
-
-#     new_report = Report(
-#         analysis_id=report.analysis_id,
-#         report_name=report.report_name,
-#         report_type=report.report_type,
-#         file_path=report.file_path
-#     )
-
-#     db.add(new_report)
-#     db.commit()
-#     db.refresh(new_report)
-
-#     return new_report
-
-
-# def get_report_by_id(db: Session, report_id: int):
-#     return db.query(Report).filter(
-#         Report.report_id == report_id
-#     ).first()
-
-
-# def get_all_reports(db: Session):
-#     return db.query(Report).all()
-
-
-# def delete_report(db: Session, report_id: int):
-
-#     report = get_report_by_id(db, report_id)
-
-#     if not report:
-#         return None
-
-#     db.delete(report)
-#     db.commit()
-
-#     return report
-      
-# def get_report_by_analysis(
-#     db: Session,
-#     analysis_id: int
-# ):
-#     return db.query(Report).filter(
-#         Report.analysis_id == analysis_id
-#     ).first()
-
-
-
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -110,50 +56,54 @@ def _get_category(
 
     return None
 
-
 def _get_runtime(
     analysis: Analysis,
+    language: ProgrammingLanguage,
 ) -> Optional[str]:
 
     metadata = analysis.benchmark_metadata
 
-    if not isinstance(metadata, dict):
-        return None
+    if isinstance(metadata, dict):
+        for key in (
+            "runtime",
+            "runtime_version",
+            "execution_runtime",
+        ):
+            value = metadata.get(key)
 
-    for key in (
-        "runtime",
-        "runtime_version",
-        "execution_runtime",
-    ):
-        value = metadata.get(key)
+            if value:
+                return str(value)
 
-        if value:
-            return str(value)
+    # Fallback to programming_language table
+    if language.version:
+        return str(language.version)
 
     return None
 
 
 def _get_compiler(
     analysis: Analysis,
+    language: ProgrammingLanguage,
 ) -> Optional[str]:
 
     metadata = analysis.benchmark_metadata
 
-    if not isinstance(metadata, dict):
-        return None
+    if isinstance(metadata, dict):
+        for key in (
+            "compiler",
+            "compiler_version",
+            "compiler_name",
+        ):
+            value = metadata.get(key)
 
-    for key in (
-        "compiler",
-        "compiler_version",
-        "compiler_name",
-    ):
-        value = metadata.get(key)
+            if value:
+                return str(value)
 
-        if value:
-            return str(value)
+    # Fallback to programming_language table
+    if language.compiler:
+        return str(language.compiler)
 
     return None
-
 
 def _build_report_title(
     analysis: Analysis,
@@ -197,8 +147,14 @@ def _build_report_dto(
         bench_size=analysis.bench_size,
         workload_type=analysis.workload_type,
         execution_date=analysis.created_at,
-        runtime=_get_runtime(analysis),
-        compiler=_get_compiler(analysis),
+        runtime=_get_runtime(
+            analysis,
+            language,
+        ),
+        compiler=_get_compiler(
+            analysis,
+            language,
+        ),
     )
 
     metrics = ReportMetrics(

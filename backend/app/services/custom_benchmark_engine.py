@@ -24,20 +24,17 @@ from app.services.compiler_runner import (
 from app.services.custom_workload_generator import (
     generate_workload,
     generate_from_input_contract,
+    get_input_generation_capability,
 )
 from app.services.workload_resolver import (
     resolve_benchmark_workload,
 )
-
+from app.services.target_code_generator import (
+    generate_target_code,
+)
 from app.services.metrics_monitor import (
     execute_with_monitor,
 )
-
-# from app.services.ai_code_generation_service import (
-#     generate_equivalent_code,
-# )
-
-
 # ============================================================
 # LANGUAGE CONFIG
 # ============================================================
@@ -555,25 +552,53 @@ def create_source_file(
     language: str,
     code: str,
 ) -> Path:
+    """
+    Create the temporary source file used for compilation/execution.
 
-    extension = (
-        LANGUAGE_EXTENSIONS[
-            language
-        ]
-    )
+    Java requires the source filename to match a public class name.
+    Other supported languages can safely use the generic source
+    filename.
+    """
+
+    extension = LANGUAGE_EXTENSIONS[
+        language
+    ]
+
+    filename = f"source{extension}"
+
+    # --------------------------------------------------------
+    # JAVA PUBLIC CLASS FILENAME
+    # --------------------------------------------------------
+
+    if language == "java":
+        import re
+
+        public_class_match = re.search(
+            r"\bpublic\s+(?:final\s+|abstract\s+)?class\s+"
+            r"([A-Za-z_$][A-Za-z0-9_$]*)",
+            code,
+        )
+
+        if public_class_match:
+            class_name = (
+                public_class_match.group(1)
+            )
+
+            filename = (
+                f"{class_name}.java"
+            )
 
     source_file = (
         Path(directory)
-        / f"source{extension}"
+        / filename
     )
 
     source_file.write_text(
         code,
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     return source_file
-
 
 # ============================================================
 # RUN ONE IMPLEMENTATION
@@ -1059,15 +1084,9 @@ def run_custom_benchmark(
             )
             continue
 
-        # AI is an explicit opt-in feature. Import lazily so a normal
-        # benchmark run cannot initialize the Gemini client by accident.
-        from app.services.ai_code_generation_service import (
-            generate_equivalent_code,
-        )
-
-        # -----------------------------
-        # Generate code
-        # -----------------------------
+                # --------------------------------------------------------
+        # GENERATE TARGET IMPLEMENTATION
+        # --------------------------------------------------------
 
         report_progress(
             step=generation_step,
@@ -1078,39 +1097,99 @@ def run_custom_benchmark(
             ),
         )
 
-        generated_code = generate_equivalent_code(
-            reference_language=
-                reference_language,
-
-            target_language=
-                target_language,
-
-            reference_code=
-                reference_code,
-
-            benchmark_name=
-                resolved_benchmark_name,
-
-            benchmark_category=
-                resolved_benchmark_category,
-
-            description=
-                resolved_description,
-
-            workload_type=resolved_workload.get(
-                "workload_type"
-            ),
-
-            input_size=
-                input_size,
+        generation_result = generate_target_code(
+            reference_code=reference_code,
+            reference_language=reference_language,
+            target_language=target_language,
+            benchmark_name=resolved_benchmark_name,
+            description=resolved_description,
+            input_contract=input_contract,
+            benchmark_metadata=benchmark_metadata,
+            workload_type=resolved_workload_type,
+            resolved_workload=resolved_workload,
         )
+
+        # --------------------------------------------------------
+        # HANDLE GENERATION FAILURE
+        # --------------------------------------------------------
+
+        if generation_result.get("status") != "success":
+
+            generation_error = (
+                generation_result.get("error")
+                or (
+                    f"{target_language} target-code "
+                    "generation failed."
+                )
+            )
+
+            report_progress(
+                step=generation_step,
+                status="failed",
+                message=(
+                    f"{target_language} implementation "
+                    f"generation failed: {generation_error}"
+                ),
+            )
+
+            results.append({
+                "language": target_language,
+                "is_reference": False,
+                "generated": False,
+                "source_code": None,
+                "execution_time": None,
+                "cpu_usage": None,
+                "memory_usage": None,
+                "energy_consumption": None,
+                "output": None,
+                "output_verified": False,
+                "status": "generation_error",
+                "error": generation_error,
+            })
+
+            continue
+
+        generated_code = generation_result.get(
+            "code"
+        )
+
+        if not generated_code:
+
+            generation_error = (
+                f"{target_language} generation returned "
+                "empty source code."
+            )
+
+            report_progress(
+                step=generation_step,
+                status="failed",
+                message=generation_error,
+            )
+
+            results.append({
+                "language": target_language,
+                "is_reference": False,
+                "generated": False,
+                "source_code": None,
+                "execution_time": None,
+                "cpu_usage": None,
+                "memory_usage": None,
+                "energy_consumption": None,
+                "output": None,
+                "output_verified": False,
+                "status": "generation_error",
+                "error": generation_error,
+            })
+
+            continue
 
         report_progress(
             step=generation_step,
             status="completed",
             message=(
-                f"{target_language} "
-                f"implementation generated"
+                f"{target_language} implementation "
+                f"generated using "
+                f"{generation_result.get('model') or 'code model'}"
             ),
         )
 
@@ -1127,10 +1206,6 @@ def run_custom_benchmark(
             ),
         )
 
-        
-
-
-
         target_result = run_custom_code(
             language_name=target_language,
             source_code=generated_code,
@@ -1142,8 +1217,12 @@ def run_custom_benchmark(
             "execution_error"
         )
 
+        # Target is unverified by default.
+        # It becomes verified only after successful execution
+        # and matching reference output.
+        output_verified = False
+
         if target_status != "success":
-            output_verified = False
 
             report_progress(
                 step=execution_step,
@@ -1156,6 +1235,7 @@ def run_custom_benchmark(
             )
 
         else:
+
             output_verified = verify_output(
                 reference_output=reference_output,
                 target_output=target_result.get(
@@ -1165,6 +1245,7 @@ def run_custom_benchmark(
             )
 
             if output_verified:
+
                 report_progress(
                     step=execution_step,
                     status="completed",
@@ -1173,7 +1254,16 @@ def run_custom_benchmark(
                         f"executed and verified"
                     ),
                 )
+
             else:
+
+                target_status = "verification_failed"
+
+                target_result["error"] = (
+                    "Target output does not match "
+                    "reference output."
+                )
+
                 report_progress(
                     step=execution_step,
                     status="failed",
@@ -1183,27 +1273,9 @@ def run_custom_benchmark(
                     ),
                 )
 
-        if output_verified:
-
-            report_progress(
-                step=execution_step,
-                status="completed",
-                message=(
-                    f"{target_language} implementation "
-                    f"executed and verified"
-                ),
-            )
-
-        else:
-
-            report_progress(
-                step=execution_step,
-                status="failed",
-                message=(
-                    f"{target_language} output "
-                    f"does not match reference"
-                ),
-            )
+        # ----------------------------------------------------
+        # STORE TARGET RESULT
+        # ----------------------------------------------------
 
         results.append({
             "language":
@@ -1219,24 +1291,24 @@ def run_custom_benchmark(
                 generated_code,
 
             "execution_time":
-                target_result[
+                target_result.get(
                     "execution_time"
-                ],
+                ),
 
             "cpu_usage":
-                target_result[
+                target_result.get(
                     "cpu_usage"
-                ],
+                ),
 
             "memory_usage":
-                target_result[
+                target_result.get(
                     "memory_usage"
-                ],
+                ),
 
             "energy_consumption":
-                target_result[
+                target_result.get(
                     "energy_consumption"
-                ],
+                ),
 
             "output":
                 target_result.get(
@@ -1265,7 +1337,6 @@ def run_custom_benchmark(
     }
 
 
-
 def resolve_benchmark_input(
     benchmark_name: str,
     description: str | None,
@@ -1275,34 +1346,17 @@ def resolve_benchmark_input(
     custom_input: str | None = None,
     resolved_workload: dict | None = None,
     input_contract: dict | None = None,
-):
+) -> str:
     """
-    Resolve the exact workload input that will be supplied
-    to every language implementation.
+    Resolve the exact stdin supplied to every implementation.
 
-    Priority:
-
-        1. User-provided custom input
-        2. Known workload registry generator
-        3. Deterministic custom-schema generator
-        4. Safe failure when no structure can be generated
+    Rules:
+        1. Block contradictory/invalid resolver results.
+        2. no-input -> empty stdin.
+        3. automatic -> deterministic contract generator.
+        4. custom -> valid user-provided Custom Input required.
+        5. Never silently guess an unsupported input format.
     """
-
-    # --------------------------------------------------------
-    # USER PROVIDED INPUT
-    # --------------------------------------------------------
-
-    if (
-        custom_input is not None
-        and custom_input.strip()
-    ):
-
-        return custom_input
-
-
-    # --------------------------------------------------------
-    # RESOLVE WORKLOAD STRUCTURE
-    # --------------------------------------------------------
 
     workload = resolved_workload
 
@@ -1315,120 +1369,122 @@ def resolve_benchmark_input(
             input_contract=input_contract,
         )
 
-
     # --------------------------------------------------------
-    # RESOLVED INPUT CONTRACT / WORKLOAD
+    # BLOCK INVALID / CONTRADICTORY RESOLUTION
     # --------------------------------------------------------
 
-    resolved_type = workload.get(
-        "workload_type"
+    generation_mode = workload.get(
+        "generation_mode"
     )
-
-    schema = workload.get(
-        "schema"
-    )
-
-    capability = workload.get(
-        "can_generate",
-        False,
-    )
-
-    # Exact Input Contract is authoritative.
-    # A "known" structure does not necessarily mean that
-    # WORKLOAD_REGISTRY already has a generator for it.
 
     if (
-        input_contract is not None
-        and input_contract.get("contract_type")
+        generation_mode == "blocked"
+        or workload.get("status") == "mismatch"
     ):
-
-        contract_type = (
-            input_contract.get(
-                "contract_type"
+        raise ValueError(
+            workload.get("reason")
+            or (
+                "Benchmark input generation is blocked because "
+                "the resolved workload is inconsistent."
             )
         )
 
-        # No stdin required.
+    # --------------------------------------------------------
+    # EXACT INPUT CONTRACT IS AUTHORITATIVE
+    # --------------------------------------------------------
+
+    if isinstance(input_contract, dict):
+
+        contract_type = (
+            str(
+                input_contract.get("contract_type")
+                or ""
+            )
+            .strip()
+            .lower()
+        )
+
+        # Program requires no stdin.
         if contract_type == "no-input":
             return ""
 
-        # --------------------------------------------------------
-        # EXACT CONTRACT GENERATOR — AUTHORITATIVE PATH
-        # --------------------------------------------------------
-        # The Input Contract Analyzer describes the actual function/input
-        # interface. That contract must be handed directly to the
-        # deterministic contract generator. Do NOT force it through the
-        # legacy schema generator: a valid contract can exist even when
-        # the resolver has no registry/schema entry.
-        if input_size is None:
-            raise ValueError(
-                "Input size is required when "
-                "generating workload automatically."
+        capability = get_input_generation_capability(
+            input_contract
+        )
+
+        can_generate = bool(
+            capability.get("can_generate")
+        )
+
+        # ----------------------------------------------------
+        # AUTOMATIC DETERMINISTIC GENERATION
+        # ----------------------------------------------------
+
+        if can_generate:
+
+            if input_size is None:
+                raise ValueError(
+                    "Input size is required for automatic "
+                    "workload generation."
+                )
+
+            algorithm = workload.get(
+                "algorithm"
             )
 
-        algorithm = workload.get("algorithm")
-        algorithm_name = (
-            algorithm.get("name")
-            if isinstance(algorithm, dict)
-            else None
-        )
+            algorithm_name = None
 
-        return generate_from_input_contract(
-            input_contract=input_contract,
-            input_size=input_size,
-            seed=42,
-            algorithm=algorithm_name,
-        )
+            if isinstance(algorithm, dict):
+                algorithm_name = (
+                    algorithm.get("name")
+                    or algorithm.get("algorithm_name")
+                )
 
-        # Exact contract is known, but no deterministic generator exists.
+            generated_input = generate_from_input_contract(
+                input_contract=input_contract,
+                input_size=input_size,
+                seed=42,
+                algorithm=algorithm_name,
+            )
+
+            return generated_input
+
+        # ----------------------------------------------------
+        # UNSUPPORTED CONTRACT -> CUSTOM INPUT REQUIRED
+        # ----------------------------------------------------
+
+        if (
+            custom_input is not None
+            and custom_input.strip()
+        ):
+            return custom_input
+
         raise ValueError(
-            "The exact input contract was detected, "
-            f"but no deterministic generator is available "
-            f"for contract '{contract_type}'."
+            capability.get("reason")
+            or (
+                "Automatic workload generation is not supported "
+                f"for input contract '{contract_type}'. "
+                "Please provide Custom Input."
+            )
         )
 
-
     # --------------------------------------------------------
-    # LEGACY / NON-CONTRACT WORKLOAD
+    # NO VERIFIED INPUT CONTRACT
     # --------------------------------------------------------
+    # Automatic generation must not happen from metadata,
+    # description, benchmark name, or guessed schema alone.
 
     if (
-    workload.get("status") == "known"
-    and resolved_type
-    and capability
+        custom_input is not None
+        and custom_input.strip()
     ):
-
-        if input_size is None:
-            raise ValueError(
-                "Input size is required when "
-                "generating workload automatically."
-            )
-
-        return generate_workload(
-            workload_type=resolved_type,
-            input_size=input_size,
-            seed=42,
-        )
-
-
-    if schema:
-        return generate_schema_input(
-            workload_type=resolved_type,
-            schema=schema,
-            input_size=input_size,
-            seed=42,
-        )
-
-    # --------------------------------------------------------
-    # UNKNOWN WORKLOAD
-    # --------------------------------------------------------
+        return custom_input
 
     raise ValueError(
-        "The workload structure could not be resolved "
-        "automatically. Please provide Custom Input."
+        "A verified Input Contract is required for automatic "
+        "workload generation. Please provide Custom Input."
     )
-
-
+            
 
 def resolve_workload_type(
     benchmark_name: str,

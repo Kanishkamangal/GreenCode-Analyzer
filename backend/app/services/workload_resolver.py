@@ -2673,6 +2673,7 @@ from typing import Any
 
 from app.services.custom_workload_generator import (
     WORKLOAD_REGISTRY,
+    get_input_generation_capability,
 )
 
 from app.services.algorithm_intelligence import (
@@ -4879,6 +4880,7 @@ def _finalize_resolver_result(
         # Metadata is presentation data. A malformed metadata
         # object must never make an invalid workload executable.
         result["can_generate"] = False
+        result["generation_mode"] = "blocked"
         result["resolver"]["validated"] = False
 
     return result
@@ -5083,6 +5085,7 @@ def resolve_benchmark_workload(
                 "input_contract": input_contract,
                 "algorithm": algorithm_detection,
                 "can_generate": False,
+                "generation_mode": "blocked",
                 "reason": (
                     "Verified input structure conflicts "
                     "with the reliably identified algorithm."
@@ -5120,7 +5123,7 @@ def resolve_benchmark_workload(
         # VALIDATED INPUT + ALGORITHM
         # ----------------------------------------------------
 
-        capability = workload_generation_capability(
+        capability = get_input_generation_capability(
             input_structure_result
         )
 
@@ -5238,6 +5241,7 @@ def resolve_benchmark_workload(
             {
                 "status": "uncertain",
                 "can_generate": False,
+                "generation_mode": "custom",
                 "detection": {
                     "method": "unverified-input-contract",
                     "confidence": 0.0,
@@ -5307,6 +5311,7 @@ def resolve_benchmark_workload(
         {
             "status": "custom",
             "can_generate": False,
+            "generation_mode": "custom",
             "detection": {
                 "method": "no-input-contract",
                 "confidence": 0.0,

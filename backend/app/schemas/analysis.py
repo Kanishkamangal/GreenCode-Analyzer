@@ -11,7 +11,7 @@ class AnalysisCreate(BaseModel):
     bench_id: Optional[int] = None
     
     bench_size: Optional[str] = None
-    
+
     custom_category: Optional[str] = None
     custom_benchmark_name: Optional[str] = None
     custom_description: Optional[str] = None 
@@ -56,8 +56,8 @@ class ReferenceCodeAnalysisRequest(BaseModel):
 
 class AnalysisResponse(BaseModel):
     analysis_id: int
+    comparison_id: Optional[int] = None
     user_id: int
-
     analysis_type: str
 
     bench_id: Optional[int] = None

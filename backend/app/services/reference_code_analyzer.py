@@ -637,6 +637,24 @@ def _is_strong_detection(
         >= AMBIGUITY_MARGIN
     )
 
+def _get_source_filename(
+    reference_code: str,
+    internal_language: str,
+    extension: str,
+) -> str:
+    if internal_language == "java":
+        match = re.search(
+            r"\bpublic\s+(?:final\s+|abstract\s+)?class\s+([A-Za-z_$][A-Za-z0-9_$]*)",
+            reference_code,
+        )
+
+        if match:
+            return f"{match.group(1)}.java"
+
+        # Java without a public class can use any valid filename.
+        return f"Main{extension}"
+
+    return f"source{extension}"
 
 def _validate_candidate_language(
     reference_code: str,
@@ -650,14 +668,15 @@ def _validate_candidate_language(
     )
 
     try:
-        source_file = (
-            Path(temp_dir) / f"source{extension}"
+        
+
+        source_filename = _get_source_filename(
+            reference_code,
+            internal_language,
+            extension,
         )
 
-        source_file.write_text(
-            reference_code,
-            encoding="utf-8",
-        )
+        source_file = Path(temp_dir) / source_filename
 
         result = validate_syntax(
             language=internal_language,
@@ -960,9 +979,13 @@ def analyze_reference_code(
     )
 
     try:
-        source_file = (
-            Path(temp_dir) / f"source{extension}"
+        source_filename = _get_source_filename(
+            code,
+            internal_language,
+            extension,
         )
+
+        source_file = Path(temp_dir) / source_filename
 
         source_file.write_text(
             code,

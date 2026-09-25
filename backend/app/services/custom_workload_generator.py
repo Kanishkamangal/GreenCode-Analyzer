@@ -1915,6 +1915,84 @@ def generate_from_input_contract(
         f"implemented for '{contract_type}'."
     )
 
+def can_generate_from_input_contract(
+    input_contract: dict[str, Any] | None,
+) -> bool:
+    if not input_contract:
+        return False
+
+    contract_type = (
+        input_contract.get("contract_type")
+        or ""
+    ).strip().lower()
+
+    if not contract_type:
+        return False
+
+    return bool(
+        INPUT_CONTRACT_GENERATOR_COVERAGE.get(
+            contract_type,
+            False,
+        )
+    )
+
+def get_input_generation_capability(
+    input_contract: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if not input_contract:
+        return {
+            "can_generate": False,
+            "generation_mode": "custom",
+            "reason": (
+                "Input contract is unavailable. "
+                "Please provide custom input."
+            ),
+        }
+
+    contract_type = (
+        input_contract.get("contract_type")
+        or ""
+    ).strip().lower()
+
+    if not contract_type:
+        return {
+            "can_generate": False,
+            "generation_mode": "custom",
+            "reason": (
+                "Input contract type is unavailable. "
+                "Please provide custom input."
+            ),
+        }
+
+    if contract_type == "no-input":
+        return {
+            "can_generate": True,
+            "generation_mode": "automatic",
+            "reason": "The reference implementation requires no input.",
+        }
+
+    if can_generate_from_input_contract(
+        input_contract
+    ):
+        return {
+            "can_generate": True,
+            "generation_mode": "automatic",
+            "reason": (
+                "Automatic workload generation is supported "
+                f"for '{contract_type}'."
+            ),
+        }
+
+    return {
+        "can_generate": False,
+        "generation_mode": "custom",
+        "reason": (
+            "Automatic workload generation is not supported "
+            f"for input contract '{contract_type}'. "
+            "Please provide custom input."
+        ),
+    }
+
 # ============================================================
 # WORKLOAD REGISTRY
 # ============================================================
@@ -7560,7 +7638,3 @@ def audit_input_contract_mutations() -> dict[str, Any]:
             and not uncovered_contracts
         ),
     }
-
-
-
-

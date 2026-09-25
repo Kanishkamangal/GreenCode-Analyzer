@@ -772,8 +772,13 @@ def run_benchmark(
     )
 
     try:
+        if normalized_language == "java":
+            temp_filename = "Main.java"
+        else:
+            temp_filename = source_filename
+
         temp_source = (
-            Path(temp_dir) / source_filename
+            Path(temp_dir) / temp_filename
         )
 
         shutil.copy2(
