@@ -1,10 +1,8 @@
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
-# from pathlib import Path
 
 # Load .env
-# load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 load_dotenv()
 
 # ==========================
