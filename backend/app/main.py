@@ -9,7 +9,6 @@ from app.models.programming_language import ProgrammingLanguage
 from app.models.analysis import Analysis
 from app.models.report import Report
 from app.routers import history_router
-from app.routers import report_router
 from app.routers.comparison_router import router as comparison_router
 from app.routers import otp_router
 from app.models.feedback import Feedback
@@ -45,7 +44,6 @@ app.include_router(user_router.router)
 app.include_router(benchmark_router.router)
 app.include_router(programming_language_router.router)
 app.include_router(analysis_router.router)
-
 app.include_router(
     history_router.router
 )
