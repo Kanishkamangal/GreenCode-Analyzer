@@ -1,6 +1,116 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../../services/api";
 
 export default function DashboardHome() {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Temporary user ID until authentication/user context is connected.
+  const userId = 1;
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await api.get(`/history/user/${userId}`);
+        setHistory(response.data.items || []);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+        setError("Unable to load dashboard data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const dashboardStats = useMemo(() => {
+    const average = (field) => {
+      const values = history
+        .map((item) => Number(item[field]))
+        .filter((value) => Number.isFinite(value));
+
+      if (!values.length) {
+        return null;
+      }
+
+      return (
+        values.reduce((sum, value) => sum + value, 0) /
+        values.length
+      );
+    };
+
+    /*
+     * A comparison represents one benchmark run containing
+     * one or more language implementations.
+     *
+     * Older/unlinked analyses fall back to their analysis ID.
+     */
+    const benchmarkRuns = new Set(
+      history.map((item) =>
+        item.comparison_id !== null &&
+        item.comparison_id !== undefined
+          ? `comparison-${item.comparison_id}`
+          : `analysis-${item.analysis_id}`
+      )
+    );
+
+    return {
+      totalBenchmarks: benchmarkRuns.size,
+      avgExecutionTime: average("execution_time"),
+      avgMemoryUsage: average("memory_usage"),
+      avgEnergyConsumption: average("energy_consumption"),
+    };
+  }, [history]);
+
+  const recentBenchmarks = useMemo(() => {
+    const sortedHistory = [...history].sort(
+      (a, b) =>
+        new Date(b.created_at || 0) -
+        new Date(a.created_at || 0)
+    );
+
+    const benchmarkRuns = new Map();
+
+    sortedHistory.forEach((item) => {
+      const key =
+        item.comparison_id !== null &&
+        item.comparison_id !== undefined
+          ? `comparison-${item.comparison_id}`
+          : `analysis-${item.analysis_id}`;
+
+      if (!benchmarkRuns.has(key)) {
+        benchmarkRuns.set(key, {
+          benchmark:
+            item.benchmark_name || "Custom Benchmark",
+          languages: [],
+          date: item.created_at,
+          verified: true,
+        });
+      }
+
+      const benchmark = benchmarkRuns.get(key);
+
+      if (
+        item.language &&
+        !benchmark.languages.includes(item.language)
+      ) {
+        benchmark.languages.push(item.language);
+      }
+
+      if (item.output_verified !== true) {
+        benchmark.verified = false;
+      }
+    });
+
+    return Array.from(benchmarkRuns.values()).slice(0, 4);
+  }, [history]);
+
   return (
     <div className="min-h-screen bg-[#F9FAFA] text-[#0F172A]">
 
@@ -47,7 +157,12 @@ export default function DashboardHome() {
         </Link>
 
       </div>
-
+      
+      {error && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* =====================================================
           STAT CARDS
@@ -56,27 +171,49 @@ export default function DashboardHome() {
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
 
         <StatCard
-          number="24"
+          number={
+            loading
+              ? "—"
+              : dashboardStats.totalBenchmarks.toLocaleString("en-IN")
+          }
           label="Total Benchmarks"
-          description="Completed analyses"
+          description="Completed benchmark runs"
         />
 
         <StatCard
-          number="532 ms"
+          number={
+            loading
+              ? "—"
+              : dashboardStats.avgExecutionTime !== null
+                ? `${dashboardStats.avgExecutionTime.toFixed(2)} ms`
+                : "—"
+          }
           label="Avg. Execution Time"
-          description="Across benchmarks"
+          description="Across executions"
         />
 
         <StatCard
-          number="256 MB"
+          number={
+            loading
+              ? "—"
+              : dashboardStats.avgMemoryUsage !== null
+                ? `${dashboardStats.avgMemoryUsage.toFixed(2)} MB`
+                : "—"
+          }
           label="Avg. Memory Usage"
-          description="Peak memory average"
+          description="Across executions"
         />
 
         <StatCard
-          number="12.45 J"
+          number={
+            loading
+              ? "—"
+              : dashboardStats.avgEnergyConsumption !== null
+                ? `${dashboardStats.avgEnergyConsumption.toFixed(2)} J`
+                : "—"
+          }
           label="Avg. Energy Consumption"
-          description="Estimated energy usage"
+          description="Measured execution energy"
         />
 
       </div>
@@ -176,31 +313,35 @@ export default function DashboardHome() {
 
 
             <tbody>
-
-              <BenchmarkRow
-                benchmark="Matrix Multiplication"
-                languages="C, C++, Python"
-                date="13-05-2026"
-              />
-
-              <BenchmarkRow
-                benchmark="Sorting (Quick Sort)"
-                languages="C, Java, Python"
-                date="13-05-2026"
-              />
-
-              <BenchmarkRow
-                benchmark="Fibonacci Series"
-                languages="C, Rust, Go"
-                date="11-05-2026"
-              />
-
-              <BenchmarkRow
-                benchmark="Prime Numbers"
-                languages="C++, Java, Python"
-                date="11-05-2026"
-              />
-
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-10 text-center text-sm text-[#6B7280]"
+                  >
+                    Loading recent benchmarks...
+                  </td>
+                </tr>
+              ) : recentBenchmarks.length > 0 ? (
+                recentBenchmarks.map((item, index) => (
+                  <BenchmarkRow
+                    key={`${item.benchmark}-${item.date}-${index}`}
+                    benchmark={item.benchmark}
+                    languages={item.languages.join(", ")}
+                    date={item.date}
+                    verified={item.verified}
+                  />
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-10 text-center text-sm text-[#6B7280]"
+                  >
+                    No benchmark executions yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
 
           </table>
@@ -296,8 +437,16 @@ function StatCard({
 function BenchmarkRow({
   benchmark,
   languages,
-  date
+  date,
+  verified,
 }) {
+  const formattedDate = date
+    ? new Date(date).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    : "—";
 
   return (
     <tr
@@ -309,41 +458,40 @@ function BenchmarkRow({
         transition
       "
     >
-
       <td className="px-6 py-4 font-medium text-[#0F172A]">
         {benchmark}
       </td>
 
       <td className="px-6 py-4 text-[#526174]">
-        {languages}
+        {languages || "—"}
       </td>
 
       <td className="px-6 py-4 text-[#6B7280]">
-        {date}
+        {formattedDate}
       </td>
 
       <td className="px-6 py-4">
-
         <span
-          className="
+          className={`
             inline-flex
             items-center
             px-2.5
             py-1
             rounded-full
-            bg-[#DFF0E1]
-            text-[#0B6B2B]
             text-xs
             font-semibold
-          "
+            ${
+              verified
+                ? "bg-[#DFF0E1] text-[#0B6B2B]"
+                : "bg-[#FFF0EE] text-[#C4473B]"
+            }
+          `}
         >
-          Completed
+          {verified ? "Verified" : "Not Verified"}
         </span>
-
       </td>
 
       <td className="px-6 py-4">
-
         <Link
           to="/dashboard/history"
           replace
@@ -356,9 +504,7 @@ function BenchmarkRow({
         >
           View
         </Link>
-
       </td>
-
     </tr>
   );
 }

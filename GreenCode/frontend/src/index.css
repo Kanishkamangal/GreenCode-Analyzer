@@ -236,30 +236,3 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: #16A34A;
 }
-
-@keyframes plantSway {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  25% {
-    transform: rotate(-2deg);
-  }
-
-  50% {
-    transform: rotate(1.8deg);
-  }
-
-  75% {
-    transform: rotate(-1.2deg);
-  }
-
-  100% {
-    transform: rotate(0deg);
-  }
-}
-
-.animate-plant-sway {
-  animation: plantSway 2s ease-in-out infinite;
-  transform-origin: bottom center;
-}

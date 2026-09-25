@@ -49,6 +49,7 @@ export default function Sidebar({
   ];
 
   return (
+
     <aside
       className={`
         fixed
@@ -95,6 +96,7 @@ export default function Sidebar({
           const Icon = item.icon;
 
           return (
+
             <NavLink
               key={item.path}
               to={item.path}
@@ -142,7 +144,9 @@ export default function Sidebar({
                 className="shrink-0"
               />
 
+
               {!collapsed && (
+
                 <span
                   className="
                     text-sm
@@ -152,11 +156,14 @@ export default function Sidebar({
                 >
                   {item.name}
                 </span>
+
               )}
+
 
               {/* COLLAPSED TOOLTIP */}
 
               {collapsed && (
+
                 <span
                   className="
                     pointer-events-none
@@ -187,9 +194,11 @@ export default function Sidebar({
                 >
                   {item.name}
                 </span>
+
               )}
 
             </NavLink>
+
           );
 
         })}
@@ -198,130 +207,19 @@ export default function Sidebar({
 
 
       {/* =====================================================
-          SIDEBAR FOOTER
+          FOOTER
       ===================================================== */}
 
       <div
-        className={`
+        className="
+          p-4
           border-t
           border-[#C4DCC7]
-
-          ${collapsed ? "p-3" : "p-4"}
-
           space-y-2
-        `}
+        "
       >
 
-        {/* =====================================================
-            ECO BRANDING
-            ===================================================== */}
-
-        {!collapsed && (
-          <div
-            className="
-              relative
-              flex
-              flex-col
-              items-center
-              mb-4
-            "
-          >
-
-            {/* PLANT */}
-
-          <div
-            className="
-              relative
-              z-10
-              h-[62px]
-              w-full
-              flex
-              justify-center
-              items-end
-              pointer-events-none
-            "
-          >
-            <img
-              src="/plant.png"
-              alt=""
-              className="
-                w-[100px]
-                h-[110px]
-                object-contain
-                object-bottom
-                animate-plant-sway
-                origin-bottom
-              "
-            />
-          </div>
-
-
-            {/* BRANDING CARD */}
-
-                      {/* BRANDING CARD */}
-
-            <div
-              className="
-                relative
-                z-0
-
-                w-full
-                min-h-[82px]
-
-                -mt-[10px]
-
-                rounded-[10px]
-
-                bg-[#DDF0E0]
-
-                px-2
-                py-3
-
-                flex
-                flex-col
-                items-center
-                justify-center
-
-                text-center
-              "
-            >
-              <div
-                className="
-                  text-[15px]
-                  leading-[1.15]
-                  font-bold
-                  text-[#155C38]
-                "
-              >
-                Code Smarter
-                <br />
-                for a Greener Planet
-              </div>
-
-              <div
-                className="
-                  mt-1.5
-
-                  text-[10px]
-                  leading-tight
-                  font-medium
-
-                  text-[#4D765D]
-
-                  whitespace-nowrap
-                "
-              >
-                Measure. Optimize. Impact.
-              </div>
-            </div>
-
-          </div>
-        )}
-
-
-        {/* =====================================================
-            BACK TO HOME
-        ===================================================== */}
+        {/* ================= BACK TO HOME ================= */}
 
         <Link
           to="/"
@@ -357,6 +255,7 @@ export default function Sidebar({
           <FiArrowLeft size={18} />
 
           {!collapsed && (
+
             <span
               className="
                 text-sm
@@ -365,9 +264,11 @@ export default function Sidebar({
             >
               Back to Home
             </span>
+
           )}
 
           {collapsed && (
+
             <span
               className="
                 pointer-events-none
@@ -396,14 +297,13 @@ export default function Sidebar({
             >
               Back to Home
             </span>
+
           )}
 
         </Link>
 
 
-        {/* =====================================================
-            COLLAPSE BUTTON
-        ===================================================== */}
+        {/* ================= COLLAPSE BUTTON ================= */}
 
         <button
           onClick={() => setCollapsed(!collapsed)}

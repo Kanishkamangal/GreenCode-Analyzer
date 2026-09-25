@@ -853,6 +853,32 @@ const handleAnalyzeReference = async () => {
           result.workload_resolution ||
           null
         );
+        const resolvedWorkload =
+          result.workload_resolution || null;
+
+        const resolvedGenerationMode =
+          resolvedWorkload?.generation_mode;
+
+        const resolvedCanGenerate =
+          Boolean(resolvedWorkload?.can_generate);
+
+        if (
+          resolvedGenerationMode === "automatic" &&
+          resolvedCanGenerate
+        ) {
+          setWorkloadMode("automatic");
+          setCustomInput("");
+        } else if (
+          resolvedGenerationMode === "custom"
+        ) {
+          setWorkloadMode("custom");
+          setCustomInputSize("");
+        } else if (
+          resolvedGenerationMode === "blocked"
+        ) {
+          setWorkloadMode("custom");
+          setCustomInputSize("");
+        }
         setBenchmarkMetadata(
           result.benchmark_metadata || null
         );
@@ -1010,11 +1036,19 @@ useEffect(() => {
     if (benchmarkType === "custom") {
 
       const automaticInputInvalid =
-      workloadMode === "automatic" &&
-      (
-        !customInputSize ||
-        Number(customInputSize) <= 0
-      );
+        workloadMode === "automatic" &&
+        !isNoInputContract &&
+        (
+          !customInputSize ||
+          Number(customInputSize) <= 0
+        );
+
+      const automaticModeUnavailable =
+        workloadMode === "automatic" &&
+        !automaticGenerationAvailable;
+
+      const blockedWorkload =
+        workloadBlocked;
 
       const customInputInvalid =
         workloadMode === "custom" &&
@@ -1032,14 +1066,22 @@ useEffect(() => {
         !customDescription.trim() ||
         selectedLanguages.length === 0 ||
         automaticInputInvalid ||
-        customInputInvalid
+        automaticModeUnavailable ||
+        customInputInvalid ||
+        blockedWorkload
       ){
         setRunError(
-          !referenceAnalysisComplete
-            ? "Please wait for the reference code analysis to complete."
-            : workloadMode === "custom"
-              ? "Please complete the benchmark fields and provide custom input."
-              : "Please complete the benchmark fields and provide a valid input size."
+          workloadBlocked
+            ? generationReason ||
+              "This workload is blocked because the detected benchmark evidence is inconsistent."
+            : !referenceAnalysisComplete
+              ? "Please wait for the reference code analysis to complete."
+              : workloadMode === "custom" && !customInput.trim()
+                ? "Automatic workload generation is unavailable. Please provide Custom Input."
+                : workloadMode === "automatic" &&
+                    !automaticGenerationAvailable
+                  ? "Automatic workload generation is unavailable for this input contract."
+                  : "Please complete the benchmark fields and provide a valid input size."
         );
 
 
@@ -1146,12 +1188,23 @@ useEffect(() => {
     );
 
     if (
-      job.status === "completed"
-    ) {
+    job.status ===
+    "completed"
+) {
 
-      setAnalysisResults(
+    console.log(
+        "CUSTOM BENCHMARK FINAL JOB:",
+        job
+    );
+
+    console.log(
+        "CUSTOM BENCHMARK RESULTS:",
+        job.results
+    );
+
+    setAnalysisResults(
         job.results || []
-      );
+    );
 
       setShowResults(true);
       setIsRunning(false);
@@ -1212,7 +1265,8 @@ useEffect(() => {
             customDescription.trim(),
 
           input_size:
-            workloadMode === "automatic"
+            workloadMode === "automatic" &&
+            !isNoInputContract
               ? Number(customInputSize)
               : null,
 
@@ -1364,6 +1418,28 @@ useEffect(() => {
     }
   };
 
+const generationMode =
+  workloadResolution?.generation_mode || "custom";
+
+const canGenerateAutomatically =
+  Boolean(workloadResolution?.can_generate);
+
+const generationReason =
+  workloadResolution?.reason || "";
+
+const contractType =
+  inputContract?.contract_type || "";
+
+const isNoInputContract =
+  contractType === "no-input";
+
+const automaticGenerationAvailable =
+  canGenerateAutomatically &&
+  generationMode === "automatic";
+
+const workloadBlocked =
+  generationMode === "blocked" ||
+  workloadResolution?.status === "mismatch";
 
       const isRunDisabled =
       isRunning ||
@@ -1386,12 +1462,21 @@ useEffect(() => {
               !customDescription.trim() ||
               selectedLanguages.length === 0 ||
               (
-                workloadMode === "automatic" &&
-                (
-                  !customInputSize ||
-                  Number(customInputSize) <= 0
-                )
-              ) ||
+  workloadBlocked
+) ||
+(
+  workloadMode === "automatic" &&
+  (
+    !automaticGenerationAvailable ||
+    (
+      !isNoInputContract &&
+      (
+        !customInputSize ||
+        Number(customInputSize) <= 0
+      )
+    )
+  )
+)||
               (
                 workloadMode === "custom" &&
                 !customInput.trim()
@@ -2168,49 +2253,32 @@ md:text-lg
 
       <Field label="Benchmark Category">
 
-        <select
-          value={benchmarkCategory}
-          onChange={(e) => {
-            setBenchmarkCategory(e.target.value);
-            setShowResults(false);
-          }}
-          className="
-            w-full
-            rounded-xl
-            border
-            border-[#E5E7EB]
-            bg-white
-            px-4
-            py-3
-            text-[#111827]
-            outline-none
-            transition
-            focus:border-[#166534]
-            focus:ring-2
-            focus:ring-[#166534]/20
-          "
-        >
+  <input
+    type="text"
+    value={benchmarkCategory}
+    onChange={(e) => {
+      setBenchmarkCategory(e.target.value);
+      setShowResults(false);
+    }}
+    placeholder="e.g. Searching"
+    className="
+      w-full
+      rounded-xl
+      border
+      border-[#E5E7EB]
+      bg-white
+      px-4
+      py-3
+      text-[#111827]
+      outline-none
+      transition
+      focus:border-[#166534]
+      focus:ring-2
+      focus:ring-[#166534]/20
+    "
+  />
 
-          <option value="">
-            Select category
-          </option>
-
-          {Object.entries(CATEGORY_LABELS).map(
-            ([value, label]) => (
-
-              <option
-                key={value}
-                value={value}
-              >
-                {label}
-              </option>
-
-            )
-          )}
-
-        </select>
-
-      </Field>
+</Field>
 
 
       <Field label="Benchmark Name">
@@ -2351,10 +2419,15 @@ md:text-lg
                     <button
                       type="button"
                       onClick={() => {
+                        if (!automaticGenerationAvailable) {
+                          return;
+                        }
+
                         setWorkloadMode("automatic");
                         setCustomInput("");
                         setShowResults(false);
                       }}
+                      disabled={!automaticGenerationAvailable}
                       className={`
                         rounded-2xl
                         border
@@ -2362,9 +2435,11 @@ md:text-lg
                         text-left
                         transition
                         ${
-                          workloadMode === "automatic"
-                            ? "border-[#22C55E] bg-[#F3F8F4]"
-                            : "border-[#E5E7EB] bg-white hover:border-[#22C55E]/50"
+                          !automaticGenerationAvailable
+                            ? "cursor-not-allowed border-[#E5E7EB] bg-[#F8FAFC] opacity-50"
+                            : workloadMode === "automatic"
+                              ? "border-[#22C55E] bg-[#F3F8F4]"
+                              : "border-[#E5E7EB] bg-white hover:border-[#22C55E]/50"
                         }
                       `}
                     >
@@ -2475,13 +2550,39 @@ md:text-lg
 
                   </div>
 
+                  {referenceAnalysisComplete && workloadResolution && (
+  <div
+    className={`
+      mt-4 rounded-xl border p-4 text-sm
+      ${
+        workloadBlocked
+          ? "border-red-200 bg-red-50 text-red-700"
+          : automaticGenerationAvailable
+            ? "border-[#CFE3D2] bg-[#F3F8F4] text-[#166534]"
+            : "border-amber-200 bg-amber-50 text-amber-800"
+      }
+    `}
+  >
+    {workloadBlocked
+      ? generationReason ||
+        "Workload generation is blocked because the detected evidence is inconsistent."
+      : automaticGenerationAvailable
+        ? generationReason ||
+          "Automatic deterministic workload generation is available."
+        : generationReason ||
+          "Automatic generation is unavailable. Please provide Custom Input."}
+  </div>
+)}
+
                 </div>
 
                 {/* =================================================
                     AUTOMATIC INPUT SIZE
                   ================================================= */}
 
-                {workloadMode === "automatic" && (
+                {workloadMode === "automatic" &&
+                automaticGenerationAvailable &&
+                !isNoInputContract && (
 
                   <div className="mb-8">
 
@@ -2758,11 +2859,9 @@ text-[#6B7280]
 
             {benchmarkType === "custom" &&
               benchmarkCategory && (
-
                 <SummaryTag>
-                  {CATEGORY_LABELS[benchmarkCategory]}
+                  {benchmarkCategory}
                 </SummaryTag>
-
               )}
 
             <SummaryTag>
@@ -3098,19 +3197,27 @@ function ResultsSection({
     (result) => {
 
       const language = languages.find(
-        (item) =>
-          item.lang_id === result.lang_id
-      );
+    (item) =>
+        Number(item.lang_id) === Number(result.lang_id) ||
+        item.lang_name === result.language
+);
 
-      return {
-        language:
-          language?.lang_name ||
-          `Language ${result.lang_id}`,
+const resultLanguageName =
+    result.language ||
+    language?.lang_name ||
+    `Language ${result.lang_id ?? "Unknown"}`;
 
-        isReference:
-          benchmarkType === "custom" &&
-          Number(result.lang_id) ===
-          Number(referenceLanguageId),
+return {
+    language: resultLanguageName,
+
+    isReference:
+        benchmarkType === "custom"
+            ? (
+                result.is_reference === true ||
+                Number(result.lang_id) ===
+                    Number(referenceLanguageId)
+            )
+            : false,
         time:
           result.execution_time != null
             ? Number(result.execution_time)
@@ -4487,44 +4594,7 @@ const CUSTOM_INPUT_CONFIG = {
   },
 
 };
-
-const CATEGORY_LABELS = {
-  "algorithms-data-structures":
-    "Algorithms & Data Structures",
-
-  "web-development":
-    "Web Development",
-
-  "desktop-applications":
-    "Desktop Applications",
-
-  "backend-api":
-    "Backend / API",
-
-  "ai-machine-learning":
-    "AI & Machine Learning",
-
-  "data-science":
-    "Data Science",
-
-  "database-data-processing":
-    "Database & Data Processing",
-
-  "system-programming":
-    "Systems Programming",
-
-  "networking":
-    "Networking",
-
-  "cybersecurity":
-    "Cybersecurity",
-
-  "game-development":
-    "Game Development",
-
-  "mobile-development":
-    "Mobile Development",
-};
+  
 
 /* =========================================================
    RESULT HIGHLIGHT

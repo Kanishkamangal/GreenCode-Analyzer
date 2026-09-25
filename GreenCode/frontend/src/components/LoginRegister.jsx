@@ -15,7 +15,6 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 
-
 export default function LoginRegister({
   onClose,
   onLogin,

@@ -70,7 +70,7 @@ const userName =
      LOGOUT
   ===================================================== */
 
-const handleLogout = () => {
+  const handleLogout = () => {
 
     setProfileOpen(false);
 
@@ -84,7 +84,6 @@ const handleLogout = () => {
     });
 
   };
-
 
   /* =====================================================
      PROFILE MENU
