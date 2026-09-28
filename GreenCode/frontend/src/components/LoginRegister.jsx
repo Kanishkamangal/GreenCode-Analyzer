@@ -89,6 +89,8 @@ export default function LoginRegister({
   const [loginPassword, setLoginPassword] =
     useState("");
 
+  const [loginError, setLoginError] = useState("");
+
   const [loginPhone, setLoginPhone] =
     useState("");
 
@@ -213,9 +215,15 @@ export default function LoginRegister({
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.detail || "Login failed.");
+        setLoginError(
+          data.detail === "Invalid password."
+            ? "Incorrect password"
+            : data.detail || "Login failed."
+        );
         return;
       }
+
+      setLoginError("");
 
       localStorage.setItem(
         "access_token",
@@ -1043,11 +1051,12 @@ if (registerPassword !== registerConfirm) {
                             : "password"
                         }
                         value={loginPassword}
-                        onChange={(e) =>
-                          setLoginPassword(
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => {
+                          setLoginPassword(e.target.value);
+                          if (loginError) {
+                            setLoginError("");
+                          }
+                        }}
                         placeholder="Enter your password"
                         className={inputStyle}
                       />
@@ -1074,6 +1083,11 @@ if (registerPassword !== registerConfirm) {
 
                     </div>
 
+                    {loginError && (
+                      <p className="mt-1.5 text-[13px] text-red-500">
+                        {loginError}
+                      </p>
+                    )}
 
                     {/* Forgot */}
 
